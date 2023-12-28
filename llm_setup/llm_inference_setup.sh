@@ -1,6 +1,6 @@
 
 # Replace '/path/to/directory' with the directory where you want to download Anaconda
-cd /n/data1/hsph/biostat/celehs/lab/va67/for_tcai/downloads
+cd /home/tc24/WinstonWork/ehr-nlp/anaconda
 
 # Download Anaconda installer
 wget https://repo.anaconda.com/archive/Anaconda3-2023.09-0-Linux-x86_64.sh
