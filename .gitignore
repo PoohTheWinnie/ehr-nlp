@@ -1,3 +1,4 @@
 local/
 llm_setup/Anaconda3-2023.09-0-Linux-x86_64.sh
 llm_setup/Anaconda3-2023.09-0-Linux-x86_64.sh.1
+torchrun --nproc_per_node 1 example_chat_completion.py --ckpt_dir /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/Llama-2-7b-chat-hf/ --tokenizer_path tokenizer.model --max_seq_len 512 --max_batch_size 6

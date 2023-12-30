@@ -159,6 +159,7 @@ def run_eval(
     for output in outputs:
         output_ids = output.outputs[0].token_ids
         question = questions[prompt_id_map[output.prompt]]
+        print(output.prompt_logprobs.keys())
 
         # be consistent with the template's stop_token_ids
         if conv.stop_token_ids:
