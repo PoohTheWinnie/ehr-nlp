@@ -165,7 +165,7 @@ def run_eval(
         question = questions[prompt_id_map[output.prompt]]
 
         match = re.match(r"(.*)/[^/]+$", answer_file)
-        output_embedding_file = match.group(1) + f"/output_embeddings_{i}"
+        output_embedding_file = match.group(1) + f"/output_logprobs_{i}"
 
         dataframe = []
 
