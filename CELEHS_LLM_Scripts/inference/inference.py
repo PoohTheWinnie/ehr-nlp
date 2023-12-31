@@ -130,7 +130,7 @@ def run_eval(
     except RecursionError:
         model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
     print('model loadeds')
-    sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
+    sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=100)
 
     prompts = []
 
