@@ -1,7 +1,9 @@
 import argparse
 import json
 import os
+import re
 import torch
+import pandas as pd
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
 from fastchat.model.model_adapter import model_adapters, register_model_adapter, BaseModelAdapter
@@ -132,6 +134,8 @@ def run_eval(
     print('model loadeds')
     sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=tokenizer.vocab_size)
 
+    print(f"Token vocabulary size: {tokenizer.vocab_size}")
+
     prompts = []
 
 
@@ -156,10 +160,25 @@ def run_eval(
 
     outputs = model.generate(prompts, sampling_params)
 
-    for output in outputs:
+    for i, output in enumerate(outputs):
         output_ids = output.outputs[0].token_ids
         question = questions[prompt_id_map[output.prompt]]
-        print(output.outputs[0].logprobs)
+
+        match = re.match(r"(.*)/[^/]+$", answer_file)
+        output_embedding_file = match.group(1) + f"/output_embeddings_{i}"
+
+        dataframe = []
+
+        for i in range(tokenizer.vocab_size):
+            row = []
+            for j in range(len(output_ids)):
+                row.append(output.outputs[0].logprobs[j][i+1])
+            dataframe.append(row)
+        
+        dataframe = pd.DataFrame(dataframe)
+        print(dataframe)
+
+        dataframe.to_csv(output_embedding_file, encoding='utf-8', index=False)
 
         # be consistent with the template's stop_token_ids
         if conv.stop_token_ids:
