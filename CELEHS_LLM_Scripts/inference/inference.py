@@ -156,6 +156,7 @@ def run_eval(
         prompt = conv.get_prompt()
         prompts.append(prompt)
         print(prompt)
+        print("======")
 
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
 
