@@ -155,6 +155,7 @@ def run_eval(
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
         prompts.append(prompt)
+        print(prompt)
 
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
 
@@ -164,21 +165,112 @@ def run_eval(
         output_ids = output.outputs[0].token_ids
         question = questions[prompt_id_map[output.prompt]]
 
-        match = re.match(r"(.*)/[^/]+$", answer_file)
-        output_embedding_file = match.group(1) + f"/output_logprobs_{i}"
+        # be consistent with the template's stop_token_ids
+        if conv.stop_token_ids:
+            stop_token_ids_index = [
+                i
+                for i, id in enumerate(output_ids)
+                if id in conv.stop_token_ids
+            ]
+            if len(stop_token_ids_index) > 0:
+                output_ids = output_ids[: stop_token_ids_index[0]]
 
-        dataframe = []
+        output = model.get_tokenizer().decode(
+            output_ids,
+            spaces_between_special_tokens=False,
+        )
+        if conv.stop_str and output.find(conv.stop_str) > 0:
+            output = output[: output.find(conv.stop_str)]
+        for special_token in model.get_tokenizer().special_tokens_map.values():
+            if isinstance(special_token, list):
+                for special_tok in special_token:
+                    output = output.replace(special_tok, "")
+            else:
+                output = output.replace(special_token, "")
+        output = output.strip()
 
-        for i in range(tokenizer.vocab_size):
-            row = []
-            for j in range(len(output_ids)):
-                row.append(output.outputs[0].logprobs[j][i])
-            dataframe.append(row)
+
+        question['output'] = output
+        question['generator'] = model_id
+
+        # Dump answers
+        os.makedirs(os.path.dirname(answer_file), exist_ok=True)
+        with open(os.path.expanduser(answer_file), "a") as fout:
+            fout.write(json.dumps(question) + "\n")
+
+def run_eval_extract_embeddings(
+    model_path,
+    model_id,
+    questions,
+    answer_file,
+    max_new_token,
+    tp_size,
+):
+    # Establish tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+    special_tokens_dict = dict()
+    if tokenizer.pad_token is None:
+        special_tokens_dict["pad_token"] = '<pad>'
+    if tokenizer.eos_token is None:
+        special_tokens_dict["eos_token"] = '</s>'
+    if tokenizer.bos_token is None:
+        special_tokens_dict["bos_token"] = '<s>'
+    if tokenizer.unk_token is None:
+        special_tokens_dict["unk_token"] = '<unk>'
+    if len(special_tokens_dict) > 0:
+        tokenizer.add_special_tokens(special_tokens_dict)
+        tokenizer.save_pretrained(model_path)
+    
+    # Load model
+    try:
+        model = LLM(model=model_path, tensor_parallel_size=tp_size)
+    except RecursionError:
+        model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
+    
+    # Runtime optimization
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
+    
+    # Sampling parameters (with log probabliities)
+    # sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=tokenizer.vocab_size)
+    # Sampling parameters (without)
+    sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
+
+    prompts = []
         
-        dataframe = pd.DataFrame(dataframe)
-        print(dataframe)
+    for item in tqdm(questions):
+        torch.manual_seed(0)
+        if 'llama' in model_id.lower() and 'chat' not in model_id.lower():
+            conv = get_conversation_template('pretrainfewshot')
+        else:
+            conv = get_conversation_template(model_id)
+        qs = few_shot_question_template.format(context=item['context'], question=item["question"])
+        conv.append_message(conv.roles[0], qs)
+        conv.append_message(conv.roles[1], None)
+        prompt = conv.get_prompt()
+        prompts.append(prompt)
 
-        dataframe.to_csv(output_embedding_file, encoding='utf-8', index=False)
+    prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
+
+    outputs = model.generate(prompts, sampling_params)
+
+    for i, output in enumerate(outputs):
+        output_ids = output.outputs[0].token_ids
+        question = questions[prompt_id_map[output.prompt]]
+
+        # Extract log probability matrix
+        # match = re.match(r"(.*)/[^/]+$", answer_file)
+        # output_embedding_file = match.group(1) + f"/output_logprobs_{i}.csv"
+
+        # dataframe = []
+        # for i in range(tokenizer.vocab_size):
+        #     row = []
+        #     for j in range(len(output_ids)):
+        #         row.append(output.outputs[0].logprobs[j][i])
+        #     dataframe.append(row)
+        
+        # dataframe = pd.DataFrame(dataframe)
+        # dataframe.to_csv(output_embedding_file, encoding='utf-8', index=False)
 
         # be consistent with the template's stop_token_ids
         if conv.stop_token_ids:
