@@ -172,7 +172,7 @@ def run_eval(
         for i in range(tokenizer.vocab_size):
             row = []
             for j in range(len(output_ids)):
-                row.append(output.outputs[0].logprobs[j][i+1])
+                row.append(output.outputs[0].logprobs[j][i])
             dataframe.append(row)
         
         dataframe = pd.DataFrame(dataframe)
