@@ -257,6 +257,7 @@ def run_eval_extract_embeddings(
     outputs = model.generate(prompts, sampling_params)
 
     for i, output in enumerate(outputs):
+        original_output = output
         output_ids = output.outputs[0].token_ids
         question = questions[prompt_id_map[output.prompt]]
 
@@ -300,7 +301,7 @@ def run_eval_extract_embeddings(
         output = output.strip()
 
         # ====== For embedding extraction ======
-        seq_data = SequenceData(output.prompt_token_ids)
+        seq_data = SequenceData(original_output.prompt_token_ids)
         seq = SequenceGroupMetadata(
             request_id=str(i),
             is_prompt=True,
