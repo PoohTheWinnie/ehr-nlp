@@ -249,6 +249,7 @@ def run_eval_extract_embeddings(
     # ====== Run model ======    
     with torch.no_grad():
         model = AutoModel.from_pretrained(model_path)
+        print("Model loaded")
         outputs = model.generate(tokenizer(prompts[0], return_tensors="pt"), output_hidden_states=True, return_dict_in_generate=True, temperature=0.7, max_tokens=max_new_token)
 
     num_layers = model.config.num_hidden_layers
