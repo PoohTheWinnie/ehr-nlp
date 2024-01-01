@@ -228,7 +228,7 @@ def run_eval_extract_embeddings(
     except RecursionError:
         model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
     
-    num_layers = model.config.num_hidden_layers
+    num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
     print(f"The model has {num_layers} layers.")
     
     # Sampling parameters (with log probabliities)
@@ -321,7 +321,7 @@ def run_eval_extract_embeddings(
     
     # ====== Execute the model for embedding extraction ======
     # input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
-    # num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
+    
     # embeddings = model.llm_engine.workers[0].model.model(
     #     input_ids=input_tokens,
     #     positions=input_positions,
@@ -330,7 +330,8 @@ def run_eval_extract_embeddings(
     #     cache_events=None,
     # )
     # print(embeddings.size())
-    
+
+    num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
     last_hidden_state = outputs.hidden_states[0][num_layers][0][-1]
     embeddings = [last_hidden_state.numpy().tolist()]
     print(f"Number of embeddings: {len(embeddings)}")
