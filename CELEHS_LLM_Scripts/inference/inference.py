@@ -159,34 +159,6 @@ def run_eval(
         print(prompt)
         print("======")
 
-    prompt_token_ids = model.llm_engine.tokenizer.encode(prompt) #[2, 100, 524, 10]
-
-    seqs = []
-    group_id = 1
-    seq_data = SequenceData(prompt_token_ids)
-    seq = SequenceGroupMetadata(
-        request_id=str(group_id),
-        is_prompt=True,
-        seq_data={group_id: seq_data},
-        sampling_params=sampling_params,
-        block_tables=None,
-    )
-    seqs.append(seq)
-
-    input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(seqs)
-
-    # Execute the model.
-    num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
-    tempOut = model.llm_engine.workers[0].model.model(
-        input_ids=input_tokens,
-        positions=input_positions,
-        kv_caches=[(None, None)] * num_layers,
-        input_metadata=input_metadata,
-        cache_events=None,
-    )
-    print(tempOut)
-    tempOut.size() #torch.Size([1, 4, 2048])
-
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
 
     outputs = model.generate(prompts, sampling_params)
@@ -279,6 +251,36 @@ def run_eval_extract_embeddings(
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
         prompts.append(prompt)
+
+    prompt_token_ids = model.llm_engine.tokenizer.encode(prompt) #[2, 100, 524, 10]
+
+    seqs = []
+    group_id = 1
+    seq_data = SequenceData(prompt_token_ids)
+    seq = SequenceGroupMetadata(
+        request_id=str(group_id),
+        is_prompt=True,
+        seq_data={group_id: seq_data},
+        sampling_params=sampling_params,
+        block_tables=None,
+    )
+    seqs.append(seq)
+
+    input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(seqs)
+
+    # Execute the model.
+    num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
+    tempOut = model.llm_engine.workers[0].model.model(
+        input_ids=input_tokens,
+        positions=input_positions,
+        kv_caches=[(None, None)] * num_layers,
+        input_metadata=input_metadata,
+        cache_events=None,
+    )
+    print(tempOut)
+    tempOut.size() #torch.Size([1, 4, 2048])
+
+    return
 
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
 
