@@ -302,6 +302,7 @@ def run_eval_extract_embeddings(
 
         # ====== For embedding extraction ======
         seq_data = SequenceData(original_output.prompt_token_ids)
+        print(f"Input token length: {len(original_output.prompt_token_ids)}")
         seq = SequenceGroupMetadata(
             request_id=str(i),
             is_prompt=True,
