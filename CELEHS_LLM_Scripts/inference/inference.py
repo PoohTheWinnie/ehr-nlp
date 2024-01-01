@@ -247,6 +247,8 @@ def run_eval_extract_embeddings(
     print(prompts)
 
     # ====== Run model ======    
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
     with torch.no_grad():
         model = AutoModel.from_pretrained(model_path)
         print("Model loaded")
