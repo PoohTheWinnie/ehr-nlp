@@ -223,8 +223,6 @@ def run_eval_extract_embeddings(
         tokenizer.save_pretrained(model_path)
     
     # ====== Load model ======
-    config = AutoConfig.from_pretrained(model_path, output_hidden_states=True)
-    model = AutoModel.from_pretrained(model_path, config=config)
     
     # Sampling parameters (with log probabliities)
     # sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=tokenizer.vocab_size)
@@ -249,6 +247,7 @@ def run_eval_extract_embeddings(
     print(prompts)
 
     # ====== Run model ======    
+    model = AutoModel.from_pretrained(model_path)
     outputs = model.generate(tokenizer(prompts[0], return_tensors="pt"), output_hidden_states=True, return_dict_in_generate=True, temperature=0.7, max_tokens=max_new_token)
 
     num_layers = model.config.num_hidden_layers
