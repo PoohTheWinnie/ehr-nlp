@@ -238,6 +238,7 @@ def run_eval_extract_embeddings(
 
     # ===== Configure prompts ======
     prompts = []
+    inputs = []
     for i, item in tqdm(enumerate(questions)):
         torch.manual_seed(0)
         if 'llama' in model_id.lower() and 'chat' not in model_id.lower():
@@ -249,62 +250,7 @@ def run_eval_extract_embeddings(
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
         prompts.append(prompt)
-
-    prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
-    print("=====================")
-    print(prompts)
-    print("=====================")
-
-    # ====== Run model ======    
-    inputs = []
-    outputs = model.generate(prompts, sampling_params)
-    for i, output in enumerate(outputs):
-        original_output = output
-        output_ids = output.outputs[0].token_ids
-        print(f"Output token length: {len(output_ids)}")
-        question = questions[prompt_id_map[output.prompt]]
-
-        # ===== Extract log probability matrix ======
-        # match = re.match(r"(.*)/[^/]+$", answer_file)
-        # output_embedding_file = match.group(1) + f"/output_logprobs_{i}.csv"
-
-        # dataframe = []
-        # for i in range(tokenizer.vocab_size):
-        #     row = []
-        #     for j in range(len(output_ids)):
-        #         row.append(output.outputs[0].logprobs[j][i])
-        #     dataframe.append(row)
-        
-        # dataframe = pd.DataFrame(dataframe)
-        # dataframe.to_csv(output_embedding_file, encoding='utf-8', index=False)
-
-        # ====== Handling stop tokens for consistency ======
-        if conv.stop_token_ids:
-            stop_token_ids_index = [
-                i
-                for i, id in enumerate(output_ids)
-                if id in conv.stop_token_ids
-            ]
-            if len(stop_token_ids_index) > 0:
-                output_ids = output_ids[: stop_token_ids_index[0]]
-        
-        output = model.get_tokenizer().decode(
-            output_ids,
-            spaces_between_special_tokens=False,
-        )
-        if conv.stop_str and output.find(conv.stop_str) > 0:
-            output = output[: output.find(conv.stop_str)]
-        for special_token in model.get_tokenizer().special_tokens_map.values():
-            if isinstance(special_token, list):
-                for special_tok in special_token:
-                    output = output.replace(special_tok, "")
-            else:
-                output = output.replace(special_token, "")
-        output = output.strip()
-
-        # ====== For embedding extraction ======
-        print(f"Input token length: {len(original_output.prompt_token_ids)}")
-        seq_data = SequenceData(original_output.prompt_token_ids)
+        seq_data = SequenceData(model.llm_engine.tokenizer.encode(prompt))
         seq = SequenceGroupMetadata(
             request_id=str(i),
             is_prompt=True,
@@ -313,14 +259,68 @@ def run_eval_extract_embeddings(
             block_tables=None,
         )
         inputs.append(seq)
-        break
 
-        # ====== For prompt text output response ======
-        question['output'] = output
-        question['generator'] = model_id
-        os.makedirs(os.path.dirname(answer_file), exist_ok=True)
-        with open(os.path.expanduser(answer_file), "a") as fout:
-            fout.write(json.dumps(question) + "\n")
+    prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
+    print("=====================")
+    print(prompts)
+    print("=====================")
+
+    # ====== Run model ======    
+    # outputs = model.generate(prompts, sampling_params)
+    # for i, output in enumerate(outputs):
+    #     original_output = output
+    #     output_ids = output.outputs[0].token_ids
+    #     print(f"Output token length: {len(output_ids)}")
+    #     question = questions[prompt_id_map[output.prompt]]
+
+    #     # ===== Extract log probability matrix ======
+    #     # match = re.match(r"(.*)/[^/]+$", answer_file)
+    #     # output_embedding_file = match.group(1) + f"/output_logprobs_{i}.csv"
+
+    #     # dataframe = []
+    #     # for i in range(tokenizer.vocab_size):
+    #     #     row = []
+    #     #     for j in range(len(output_ids)):
+    #     #         row.append(output.outputs[0].logprobs[j][i])
+    #     #     dataframe.append(row)
+        
+    #     # dataframe = pd.DataFrame(dataframe)
+    #     # dataframe.to_csv(output_embedding_file, encoding='utf-8', index=False)
+
+    #     # ====== Handling stop tokens for consistency ======
+    #     if conv.stop_token_ids:
+    #         stop_token_ids_index = [
+    #             i
+    #             for i, id in enumerate(output_ids)
+    #             if id in conv.stop_token_ids
+    #         ]
+    #         if len(stop_token_ids_index) > 0:
+    #             output_ids = output_ids[: stop_token_ids_index[0]]
+        
+    #     output = model.get_tokenizer().decode(
+    #         output_ids,
+    #         spaces_between_special_tokens=False,
+    #     )
+    #     if conv.stop_str and output.find(conv.stop_str) > 0:
+    #         output = output[: output.find(conv.stop_str)]
+    #     for special_token in model.get_tokenizer().special_tokens_map.values():
+    #         if isinstance(special_token, list):
+    #             for special_tok in special_token:
+    #                 output = output.replace(special_tok, "")
+    #         else:
+    #             output = output.replace(special_token, "")
+    #     output = output.strip()
+
+    #     # ====== For embedding extraction ======
+        
+    #     break
+
+    #     # ====== For prompt text output response ======
+    #     question['output'] = output
+    #     question['generator'] = model_id
+    #     os.makedirs(os.path.dirname(answer_file), exist_ok=True)
+    #     with open(os.path.expanduser(answer_file), "a") as fout:
+    #         fout.write(json.dumps(question) + "\n")
 
     # ====== GPU optimization ======
     torch.cuda.empty_cache()
