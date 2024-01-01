@@ -116,6 +116,7 @@ def run_eval(
     tp_size,
 ):
     # Initialize the model and tokenizer
+    prompt = "This is an example sentence."
     model_name = "bert-base-uncased"
     model = BertModel.from_pretrained(model_name, output_hidden_states=True)
     tokenizer = BertTokenizer.from_pretrained(model_name)
@@ -131,7 +132,7 @@ def run_eval(
         embeddings[layer] = [last_hidden_state.numpy().tolist()]
     return
     # Define your prompt
-    prompt = "This is an example sentence."
+    
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     special_tokens_dict = dict()
     if tokenizer.pad_token is None:
