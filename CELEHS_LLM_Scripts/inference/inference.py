@@ -105,7 +105,7 @@ register_model_adapter(PretrainFewShotAdapter)
 
 from fastchat.model import get_conversation_template
 import numpy as numpy
-from transformers import AutoTokenizer, AutoConfig, AutoModel, BertModel, BertTokenizer
+from transformers import AutoTokenizer, AutoConfig, AutoModel, BertLMHeadModel, BertTokenizer
 
 def run_eval(
     model_path,
@@ -209,7 +209,7 @@ def run_eval_extract_embeddings(
 ):
     prompt = "This is an example sentence."
     model_name = "bert-base-uncased"
-    model = BertModel.from_pretrained(model_name, output_hidden_states=True)
+    model = BertLMHeadModel.from_pretrained(model_name, output_hidden_states=True)
     tokenizer = BertTokenizer.from_pretrained(model_name)
 
     # Define the layers you want to use (for example, layers 10 and 11 in BERT)
