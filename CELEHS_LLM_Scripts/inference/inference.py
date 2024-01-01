@@ -331,13 +331,14 @@ def run_eval_extract_embeddings(
     # )
     # print(embeddings.size())
 
-    num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
-    last_hidden_state = outputs.hidden_states[0][num_layers][0][-1]
-    embeddings = [last_hidden_state.numpy().tolist()]
-    print(f"Number of embeddings: {len(embeddings)}")
-    print(f"Length of embedding: {len(embeddings[0])}")
+    # num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
+    print(len(outputs.hidden_states[0]))
+    # last_hidden_state = outputs.hidden_states[0][num_layers][0][-1]
+    # embeddings = [last_hidden_state.numpy().tolist()]
+    # print(f"Number of embeddings: {len(embeddings)}")
+    # print(f"Length of embedding: {len(embeddings[0])}")
 
-    return embeddings
+    # return embeddings
 
 
 if __name__ == "__main__":
