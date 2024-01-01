@@ -278,7 +278,7 @@ def run_eval_extract_embeddings(
         cache_events=None,
     )
     print(tempOut)
-    tempOut.size() #torch.Size([1, 4, 2048])
+    print(tempOut.size())
 
     return
 
