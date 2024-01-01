@@ -325,9 +325,15 @@ def run_eval_extract_embeddings(
     torch.cuda.reset_peak_memory_stats()
     
     # ====== Execute the model for embedding extraction ======
-    print(len(model.llm_engine.workers))
+    print(f"Number of workers: {len(model.llm_engine.workers)}")
+    print(f"Number of layers: {model.llm_engine.model_config.get_num_layers(model.llm_engine.parallel_config)}")
+    print(model.llm_engine.workers[0].model)
+
     input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
     num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
+    
+    print(f"Number of layers (confirm): {num_layers}")
+
     embeddings = model.llm_engine.workers[0].model.model(
         input_ids=input_tokens,
         positions=input_positions,
