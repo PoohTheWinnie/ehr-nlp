@@ -223,21 +223,17 @@ def run_eval_extract_embeddings(
         tokenizer.save_pretrained(model_path)
     
     # ====== Load model ======
-    try:
-        model = LLM(model=model_path, tensor_parallel_size=tp_size)
-    except RecursionError:
-        model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
-    
-    num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
-    print(f"The model has {num_layers} layers.")
+    from transformers import AutoConfig, AutoModel
+    config = AutoConfig.from_pretrained(model_path, output_hidden_states=True)
+    model = AutoModel.from_pretrained(model_path, config=config)
     
     # Sampling parameters (with log probabliities)
     # sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=tokenizer.vocab_size)
     # Sampling parameters (without)
-    sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
+    # sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
 
+    # ===== Configure prompts ======
     prompts = []
-
     for i, item in tqdm(enumerate(questions)):
         torch.manual_seed(0)
         if 'llama' in model_id.lower() and 'chat' not in model_id.lower():
@@ -251,7 +247,18 @@ def run_eval_extract_embeddings(
         prompts.append(prompt)
 
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
-    outputs = model.generate(prompts, sampling_params, output_hidden_states=True, return_dict_in_generate=True)
+
+
+    # ====== Run model ======    
+    outputs = model.generate(tokenizer(prompts[0], return_tensors="pt"), output_hidden_states=True, return_dict_in_generate=True, temperature=0.7, max_tokens=max_new_token)
+
+    num_layers = model.config.num_hidden_layers
+    print(f"Number of layers: {num_layers}")
+
+    last_hidden_state = outputs.hidden_states[0][num_layers-1][0][-1]
+    embeddings = [last_hidden_state.numpy().tolist()]
+    print(f"Number of embeddings: {len(embeddings)}")
+    print(f"Length of embedding: {len(embeddings[0])}")
 
     for i, output in enumerate(outputs):
         # original_output = output
@@ -331,12 +338,7 @@ def run_eval_extract_embeddings(
     # )
     # print(embeddings.size())
 
-    # num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
-    print(len(outputs.hidden_states[0]))
-    # last_hidden_state = outputs.hidden_states[0][num_layers][0][-1]
-    # embeddings = [last_hidden_state.numpy().tolist()]
-    # print(f"Number of embeddings: {len(embeddings)}")
-    # print(f"Length of embedding: {len(embeddings[0])}")
+    
 
     # return embeddings
 
