@@ -115,24 +115,6 @@ def run_eval(
     max_new_token,
     tp_size,
 ):
-    # Initialize the model and tokenizer
-    prompt = "This is an example sentence."
-    model_name = "bert-base-uncased"
-    model = BertModel.from_pretrained(model_name, output_hidden_states=True)
-    tokenizer = BertTokenizer.from_pretrained(model_name)
-
-    # Define the layers you want to use (for example, layers 10 and 11 in BERT)
-    layers_to_use = [model.config.num_hidden_layers]
-    inputs = tokenizer(prompt, return_tensors="pt")
-    with torch.no_grad():
-        outputs = model.generate(inputs.input_ids, output_hidden_states=True, return_dict_in_generate=True, max_new_tokens=1, min_new_tokens=1)
-    embeddings = {}
-    for layer in layers_to_use:
-        last_hidden_state = outputs.hidden_states[0][layer][0][-1]
-        embeddings[layer] = [last_hidden_state.numpy().tolist()]
-    return
-    # Define your prompt
-    
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     special_tokens_dict = dict()
     if tokenizer.pad_token is None:
@@ -225,8 +207,21 @@ def run_eval_extract_embeddings(
     max_new_token,
     tp_size,
 ):
-    
+    prompt = "This is an example sentence."
+    model_name = "bert-base-uncased"
+    model = BertModel.from_pretrained(model_name, output_hidden_states=True)
+    tokenizer = BertTokenizer.from_pretrained(model_name)
 
+    # Define the layers you want to use (for example, layers 10 and 11 in BERT)
+    layers_to_use = [model.config.num_hidden_layers]
+    inputs = tokenizer(prompt, return_tensors="pt")
+    with torch.no_grad():
+        outputs = model.generate(inputs.input_ids, output_hidden_states=True, return_dict_in_generate=True, max_new_tokens=1, min_new_tokens=1)
+    embeddings = {}
+    for layer in layers_to_use:
+        last_hidden_state = outputs.hidden_states[0][layer][0][-1]
+        embeddings[layer] = [last_hidden_state.numpy().tolist()]
+    return
     # ====== Establish tokenizer ======
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     special_tokens_dict = dict()
