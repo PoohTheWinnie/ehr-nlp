@@ -105,7 +105,7 @@ register_model_adapter(PretrainFewShotAdapter)
 
 from fastchat.model import get_conversation_template
 import numpy as numpy
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoConfig, AutoModel
 
 def run_eval(
     model_path,
@@ -223,7 +223,6 @@ def run_eval_extract_embeddings(
         tokenizer.save_pretrained(model_path)
     
     # ====== Load model ======
-    from transformers import AutoConfig, AutoModel
     config = AutoConfig.from_pretrained(model_path, output_hidden_states=True)
     model = AutoModel.from_pretrained(model_path, config=config)
     
@@ -247,7 +246,7 @@ def run_eval_extract_embeddings(
         prompts.append(prompt)
 
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
-
+    print(prompts)
 
     # ====== Run model ======    
     outputs = model.generate(tokenizer(prompts[0], return_tensors="pt"), output_hidden_states=True, return_dict_in_generate=True, temperature=0.7, max_tokens=max_new_token)
