@@ -332,28 +332,17 @@ def run_eval_extract_embeddings(
     num_layers = model.llm_engine.model_config.get_num_layers(model.llm_engine.parallel_config)
     input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
     print("=====================")
-    print("Input Tokens")
-    print(input_tokens)
+    print(model.llm_engine.workers[0].model.get_output_embeddings())
     print("=====================")
 
-    print("=====================")
-    print("Input Positions")
-    print(input_positions)
-    print("=====================")
-
-    print("=====================")
-    print("Input Metadata")
-    print(input_metadata)
-    print("=====================")
-
-    embeddings = model.llm_engine.workers[0].model.model(
-        input_ids=input_tokens,
-        positions=input_positions,
-        kv_caches=[(None, None)] * num_layers,
-        input_metadata=input_metadata,
-        cache_events=None,
-    )
-    print(embeddings.size())
+    # embeddings = model.llm_engine.workers[0].model.model(
+    #     input_ids=input_tokens,
+    #     positions=input_positions,
+    #     kv_caches=[(None, None)] * num_layers,
+    #     input_metadata=input_metadata,
+    #     cache_events=None,
+    # )
+    # print(embeddings.size())
     # return embeddings
 
 
