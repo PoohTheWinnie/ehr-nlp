@@ -229,10 +229,6 @@ def run_eval_extract_embeddings(
     except RecursionError:
         model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
     
-    # ====== GPU optimization ======
-    torch.cuda.empty_cache()
-    torch.cuda.reset_peak_memory_stats()
-    
     # Sampling parameters (with log probabliities)
     # sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=tokenizer.vocab_size)
     # Sampling parameters (without)
@@ -257,6 +253,7 @@ def run_eval_extract_embeddings(
     outputs = model.generate(prompts, sampling_params)
 
     for i, output in enumerate(outputs):
+        original_output = output
         output_ids = output.outputs[0].token_ids
         question = questions[prompt_id_map[output.prompt]]
 
@@ -300,7 +297,7 @@ def run_eval_extract_embeddings(
         output = output.strip()
 
         # ====== For embedding extraction ======
-        seq_data = SequenceData(output_ids)
+        seq_data = SequenceData(original_output.prompt_token_ids)
         seq = SequenceGroupMetadata(
             request_id=str(i),
             is_prompt=True,
@@ -316,9 +313,13 @@ def run_eval_extract_embeddings(
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
         with open(os.path.expanduser(answer_file), "a") as fout:
             fout.write(json.dumps(question) + "\n")
-    input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
 
+    # ====== GPU optimization ======
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
+    
     # ====== Execute the model for embedding extraction ======
+    input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
     num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
     embeddings = model.llm_engine.workers[0].model.model(
         input_ids=input_tokens,
