@@ -139,7 +139,6 @@ def run_eval(
 
     prompts = []
 
-
     # if conv.name=='eevee':
     #     question_template = '{context}\n\n### Question:\n{question}'
     # else:
@@ -229,13 +228,15 @@ def run_eval_extract_embeddings(
     except RecursionError:
         model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
     
+    num_layers = model.config.num_hidden_layers
+    print(f"The model has {num_layers} layers.")
+    
     # Sampling parameters (with log probabliities)
     # sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=tokenizer.vocab_size)
     # Sampling parameters (without)
     sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
 
     prompts = []
-    inputs = []
 
     for i, item in tqdm(enumerate(questions)):
         torch.manual_seed(0)
@@ -250,10 +251,10 @@ def run_eval_extract_embeddings(
         prompts.append(prompt)
 
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
-    outputs = model.generate(prompts, sampling_params)
+    outputs = model.generate(prompts, sampling_params, output_hidden_states=True, return_dict_in_generate=True)
 
     for i, output in enumerate(outputs):
-        original_output = output
+        # original_output = output
         output_ids = output.outputs[0].token_ids
         question = questions[prompt_id_map[output.prompt]]
 
@@ -297,15 +298,15 @@ def run_eval_extract_embeddings(
         output = output.strip()
 
         # ====== For embedding extraction ======
-        seq_data = SequenceData(original_output.prompt_token_ids)
-        seq = SequenceGroupMetadata(
-            request_id=str(i),
-            is_prompt=True,
-            seq_data={i: seq_data},
-            sampling_params=sampling_params,
-            block_tables=None,
-        )
-        inputs.append(seq)
+        # seq_data = SequenceData(original_output.prompt_token_ids)
+        # seq = SequenceGroupMetadata(
+        #     request_id=str(i),
+        #     is_prompt=True,
+        #     seq_data={i: seq_data},
+        #     sampling_params=sampling_params,
+        #     block_tables=None,
+        # )
+        # inputs.append(seq)
 
         # ====== For prompt text output response ======
         question['output'] = output
@@ -319,16 +320,24 @@ def run_eval_extract_embeddings(
     torch.cuda.reset_peak_memory_stats()
     
     # ====== Execute the model for embedding extraction ======
-    input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
-    num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
-    embeddings = model.llm_engine.workers[0].model.model(
-        input_ids=input_tokens,
-        positions=input_positions,
-        kv_caches=[(None, None)] * num_layers,
-        input_metadata=input_metadata,
-        cache_events=None,
-    )
-    print(embeddings.size())
+    # input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
+    # num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
+    # embeddings = model.llm_engine.workers[0].model.model(
+    #     input_ids=input_tokens,
+    #     positions=input_positions,
+    #     kv_caches=[(None, None)] * num_layers,
+    #     input_metadata=input_metadata,
+    #     cache_events=None,
+    # )
+    # print(embeddings.size())
+    
+    last_hidden_state = outputs.hidden_states[0][num_layers][0][-1]
+    embeddings = [last_hidden_state.numpy().tolist()]
+    print(f"Number of embeddings: {len(embeddings)}")
+    print(f"Length of embedding: {len(embeddings[0])}")
+
+    return embeddings
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
