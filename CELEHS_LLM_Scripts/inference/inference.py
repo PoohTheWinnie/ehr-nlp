@@ -345,7 +345,7 @@ def run_eval_extract_embeddings(
     transformers_model = model.llm_engine.workers[0].model
 
     with torch.no_grad():
-        outputs = model.generate(inputs.input_ids, output_hidden_states=True, return_dict_in_generate=True, max_new_tokens=1, min_new_tokens=1)
+        outputs = transformers_model.generate(inputs.input_ids, output_hidden_states=True, return_dict_in_generate=True, max_new_tokens=1, min_new_tokens=1)
     embeddings = {}
     num_layers = model.llm_engine.model_config.get_num_layers(model.llm_engine.parallel_config)
     for layer in [num_layers]:
