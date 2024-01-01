@@ -336,14 +336,14 @@ def run_eval_extract_embeddings(
     print(model.llm_engine.workers[0].__dir__())
     print("=====================")
 
-    # embeddings = model.llm_engine.workers[0].model.model(
-    #     input_ids=input_tokens,
-    #     positions=input_positions,
-    #     kv_caches=[(None, None)] * num_layers,
-    #     input_metadata=input_metadata,
-    #     cache_events=None,
-    # )
-    # print(embeddings.size())
+    embeddings = model.llm_engine.workers[0].model.model(
+        input_ids=input_tokens,
+        positions=input_positions,
+        kv_caches=[(None, None)] * num_layers,
+        input_metadata=input_metadata,
+        cache_events=None,
+    )
+    print(embeddings.size())
     # return embeddings
 
 
