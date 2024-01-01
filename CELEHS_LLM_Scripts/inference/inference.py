@@ -261,6 +261,7 @@ def run_eval_extract_embeddings(
     for i, output in enumerate(outputs):
         original_output = output
         output_ids = output.outputs[0].token_ids
+        print(f"Output token length: {len(output_ids)}")
         question = questions[prompt_id_map[output.prompt]]
 
         # ===== Extract log probability matrix ======
@@ -287,7 +288,6 @@ def run_eval_extract_embeddings(
             if len(stop_token_ids_index) > 0:
                 output_ids = output_ids[: stop_token_ids_index[0]]
         
-        print(f"Output token length: {len(output_ids)}")
         output = model.get_tokenizer().decode(
             output_ids,
             spaces_between_special_tokens=False,
