@@ -312,6 +312,7 @@ def run_eval_extract_embeddings(
             block_tables=None,
         )
         inputs.append(seq)
+        break
 
         # ====== For prompt text output response ======
         question['output'] = output
