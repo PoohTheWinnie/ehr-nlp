@@ -208,7 +208,7 @@ def run_eval_extract_embeddings(
     max_new_token,
     tp_size,
 ):
-    # Establish tokenizer
+    # ====== Establish tokenizer ======
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     special_tokens_dict = dict()
     if tokenizer.pad_token is None:
@@ -223,13 +223,13 @@ def run_eval_extract_embeddings(
         tokenizer.add_special_tokens(special_tokens_dict)
         tokenizer.save_pretrained(model_path)
     
-    # Load model
+    # ====== Load model ======
     try:
         model = LLM(model=model_path, tensor_parallel_size=tp_size)
     except RecursionError:
         model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
     
-    # Runtime optimization
+    # ====== GPU optimization ======
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
     
@@ -239,8 +239,9 @@ def run_eval_extract_embeddings(
     sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
 
     prompts = []
-        
-    for item in tqdm(questions):
+    inputs = []
+
+    for i, item in tqdm(enumerate(questions)):
         torch.manual_seed(0)
         if 'llama' in model_id.lower() and 'chat' not in model_id.lower():
             conv = get_conversation_template('pretrainfewshot')
@@ -252,45 +253,14 @@ def run_eval_extract_embeddings(
         prompt = conv.get_prompt()
         prompts.append(prompt)
 
-    prompt_token_ids = model.llm_engine.tokenizer.encode(prompt) #[2, 100, 524, 10]
-
-    seqs = []
-    group_id = 1
-    seq_data = SequenceData(prompt_token_ids)
-    seq = SequenceGroupMetadata(
-        request_id=str(group_id),
-        is_prompt=True,
-        seq_data={group_id: seq_data},
-        sampling_params=sampling_params,
-        block_tables=None,
-    )
-    seqs.append(seq)
-
-    input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(seqs)
-
-    # Execute the model.
-    num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
-    tempOut = model.llm_engine.workers[0].model.model(
-        input_ids=input_tokens,
-        positions=input_positions,
-        kv_caches=[(None, None)] * num_layers,
-        input_metadata=input_metadata,
-        cache_events=None,
-    )
-    print(tempOut)
-    print(tempOut.size())
-
-    return
-
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
-
     outputs = model.generate(prompts, sampling_params)
 
     for i, output in enumerate(outputs):
         output_ids = output.outputs[0].token_ids
         question = questions[prompt_id_map[output.prompt]]
 
-        # Extract log probability matrix
+        # ===== Extract log probability matrix ======
         # match = re.match(r"(.*)/[^/]+$", answer_file)
         # output_embedding_file = match.group(1) + f"/output_logprobs_{i}.csv"
 
@@ -304,7 +274,7 @@ def run_eval_extract_embeddings(
         # dataframe = pd.DataFrame(dataframe)
         # dataframe.to_csv(output_embedding_file, encoding='utf-8', index=False)
 
-        # be consistent with the template's stop_token_ids
+        # ====== Handling stop tokens for consistency ======
         if conv.stop_token_ids:
             stop_token_ids_index = [
                 i
@@ -313,7 +283,8 @@ def run_eval_extract_embeddings(
             ]
             if len(stop_token_ids_index) > 0:
                 output_ids = output_ids[: stop_token_ids_index[0]]
-
+        
+        print(f"Output token length: {len(output_ids)}")
         output = model.get_tokenizer().decode(
             output_ids,
             spaces_between_special_tokens=False,
@@ -328,14 +299,35 @@ def run_eval_extract_embeddings(
                 output = output.replace(special_token, "")
         output = output.strip()
 
+        # ====== For embedding extraction ======
+        seq_data = SequenceData(output.prompt_token_ids)
+        seq = SequenceGroupMetadata(
+            request_id=str(i),
+            is_prompt=True,
+            seq_data={i: seq_data},
+            sampling_params=sampling_params,
+            block_tables=None,
+        )
+        inputs.append(seq)
 
+        # ====== For prompt text output response ======
         question['output'] = output
         question['generator'] = model_id
-
-        # Dump answers
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
         with open(os.path.expanduser(answer_file), "a") as fout:
             fout.write(json.dumps(question) + "\n")
+    input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
+
+    # ====== Execute the model for embedding extraction ======
+    num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
+    embeddings = model.llm_engine.workers[0].model.model(
+        input_ids=input_tokens,
+        positions=input_positions,
+        kv_caches=[(None, None)] * num_layers,
+        input_metadata=input_metadata,
+        cache_events=None,
+    )
+    print(embeddings.size())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
