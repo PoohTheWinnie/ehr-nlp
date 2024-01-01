@@ -207,21 +207,16 @@ def run_eval_extract_embeddings(
     max_new_token,
     tp_size,
 ):
-    prompt = "This is an example sentence."
-    model_name = "bert-base-uncased"
-    model = BertLMHeadModel.from_pretrained(model_name, output_hidden_states=True)
-    tokenizer = BertTokenizer.from_pretrained(model_name)
+    # prompt = "This is an example sentence."
+    # model_name = "bert-base-uncased"
+    # model = BertLMHeadModel.from_pretrained(model_name, output_hidden_states=True)
+    # tokenizer = BertTokenizer.from_pretrained(model_name)
 
-    # Define the layers you want to use (for example, layers 10 and 11 in BERT)
-    layers_to_use = [model.config.num_hidden_layers]
-    inputs = tokenizer(prompt, return_tensors="pt")
-    with torch.no_grad():
-        outputs = model.generate(inputs.input_ids, output_hidden_states=True, return_dict_in_generate=True, max_new_tokens=1, min_new_tokens=1)
-    embeddings = {}
-    for layer in layers_to_use:
-        last_hidden_state = outputs.hidden_states[0][layer][0][-1]
-        embeddings[layer] = [last_hidden_state.numpy().tolist()]
-    return
+    # # Define the layers you want to use (for example, layers 10 and 11 in BERT)
+    # layers_to_use = [model.config.num_hidden_layers]
+    # inputs = tokenizer(prompt, return_tensors="pt")
+    
+    # return
     # ====== Establish tokenizer ======
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     special_tokens_dict = dict()
@@ -254,6 +249,7 @@ def run_eval_extract_embeddings(
     # ===== Configure prompts ======
     prompts = []
     inputs = []
+    tokens = []
     for i, item in tqdm(enumerate(questions)):
         torch.manual_seed(0)
         if 'llama' in model_id.lower() and 'chat' not in model_id.lower():
@@ -265,6 +261,7 @@ def run_eval_extract_embeddings(
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
         prompts.append(prompt)
+        tokens.append(tokenizer(prompt))
         seq_data = SequenceData(model.llm_engine.tokenizer.encode(prompt))
         seq = SequenceGroupMetadata(
             request_id=str(i),
@@ -344,23 +341,32 @@ def run_eval_extract_embeddings(
     # ====== Execute the model for embedding extraction ======
     print(f"Number of workers: {len(model.llm_engine.workers)}")
     print(f"Number of layers: {model.llm_engine.model_config.get_num_layers(model.llm_engine.parallel_config)}")
-    print(model.llm_engine.workers[0].model)
+    # print(model.llm_engine.workers[0].model)
+    transformers_model = model.llm_engine.workers[0].model
 
+    with torch.no_grad():
+        outputs = model.generate(inputs.input_ids, output_hidden_states=True, return_dict_in_generate=True, max_new_tokens=1, min_new_tokens=1)
+    embeddings = {}
     num_layers = model.llm_engine.model_config.get_num_layers(model.llm_engine.parallel_config)
-    input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
-    print("=====================")
-    print(model.llm_engine.workers[0].__dir__())
-    print("=====================")
+    for layer in [num_layers]:
+        last_hidden_state = outputs.hidden_states[0][layer][0][-1]
+        embeddings[layer] = [last_hidden_state.numpy().tolist()]
+    print(embeddings)
+    
+    # input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
+    # print("=====================")
+    # print(model.llm_engine.workers[0].__dir__())
+    # print("=====================")
 
-    embeddings = model.llm_engine.workers[0].model.model(
-        input_ids=input_tokens,
-        positions=input_positions,
-        kv_caches=[(None, None)] * num_layers,
-        input_metadata=input_metadata,
-        cache_events=None,
-    )
-    print(embeddings.size())
-    # return embeddings
+    # embeddings = model.llm_engine.workers[0].model.model(
+    #     input_ids=input_tokens,
+    #     positions=input_positions,
+    #     kv_caches=[(None, None)] * num_layers,
+    #     input_metadata=input_metadata,
+    #     cache_events=None,
+    # )
+    # print(embeddings.size())
+    # # return embeddings
 
 
 if __name__ == "__main__":
