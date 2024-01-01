@@ -6,6 +6,7 @@ import torch
 import pandas as pd
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
+from vllm.sequence import SequenceData, SequenceGroupMetadata
 from fastchat.model.model_adapter import model_adapters, register_model_adapter, BaseModelAdapter
 from fastchat.conversation import conv_templates, register_conv_template, Conversation, SeparatorStyle, get_conv_template
 
@@ -158,6 +159,34 @@ def run_eval(
         print(prompt)
         print("======")
 
+    prompt_token_ids = model.llm_engine.tokenizer.encode(prompt) #[2, 100, 524, 10]
+
+    seqs = []
+    group_id = 1
+    seq_data = SequenceData(prompt_token_ids)
+    seq = SequenceGroupMetadata(
+        request_id=str(group_id),
+        is_prompt=True,
+        seq_data={group_id: seq_data},
+        sampling_params=sampling_params,
+        block_tables=None,
+    )
+    seqs.append(seq)
+
+    input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(seqs)
+
+    # Execute the model.
+    num_layers = model.llm_engine.workers[0].model_config.get_num_layers(model.llm_engine.workers[0].parallel_config)
+    tempOut = model.llm_engine.workers[0].model.model(
+        input_ids=input_tokens,
+        positions=input_positions,
+        kv_caches=[(None, None)] * num_layers,
+        input_metadata=input_metadata,
+        cache_events=None,
+    )
+    print(tempOut)
+    tempOut.size() #torch.Size([1, 4, 2048])
+
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
 
     outputs = model.generate(prompts, sampling_params)
@@ -195,9 +224,9 @@ def run_eval(
         question['generator'] = model_id
 
         # Dump answers
-        os.makedirs(os.path.dirname(answer_file), exist_ok=True)
-        with open(os.path.expanduser(answer_file), "a") as fout:
-            fout.write(json.dumps(question) + "\n")
+        # os.makedirs(os.path.dirname(answer_file), exist_ok=True)
+        # with open(os.path.expanduser(answer_file), "a") as fout:
+        #     fout.write(json.dumps(question) + "\n")
 
 def run_eval_extract_embeddings(
     model_path,
@@ -357,7 +386,7 @@ if __name__ == "__main__":
     print(f"Num Questions: {len(questions)}")
     print(f"Conv Template: {get_conversation_template(args.model_id)}")
     
-    run_eval(
+    run_eval_extract_embeddings(
         args.model_path,
         args.model_id,
         questions,
