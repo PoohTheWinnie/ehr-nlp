@@ -259,6 +259,8 @@ def run_eval_extract_embeddings(
     print(f"Number of embeddings: {len(embeddings)}")
     print(f"Length of embedding: {len(embeddings[0])}")
 
+    return
+
     for i, output in enumerate(outputs):
         # original_output = output
         output_ids = output.outputs[0].token_ids
