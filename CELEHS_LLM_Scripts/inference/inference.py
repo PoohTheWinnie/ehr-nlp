@@ -266,7 +266,7 @@ def run_eval_extract_embeddings(
 
     # ====== Run model ======    
     with torch.no_grad():
-        outputs = model.generate(tokens[0], output_hidden_states=True, temperature=0.7, max_tokens=max_new_token)
+        outputs = model.generate(tokens[0], output_hidden_states=True, temperature=0.7)
     
     num_layers = model.config.num_hidden_layers
     last_hidden_state = outputs.hidden_states[0][num_layers-1][0][-1]
