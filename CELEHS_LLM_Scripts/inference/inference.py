@@ -209,7 +209,7 @@ def run_eval_extract_embeddings(
 ):
     prompt = "This is an example sentence."
     model = LlamaForCausalLM.from_pretrained(model_path, output_hidden_states=True)
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
 
     # Define the layers you want to use (for example, layers 10 and 11 in BERT)
     # layers_to_use = [model.config.num_hidden_layers]
