@@ -207,15 +207,6 @@ def run_eval_extract_embeddings(
     max_new_token,
     tp_size,
 ):
-    prompt = "This is an example sentence."
-    model = LlamaForCausalLM.from_pretrained(model_path, output_hidden_states=True)
-    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-
-    # Define the layers you want to use (for example, layers 10 and 11 in BERT)
-    # layers_to_use = [model.config.num_hidden_layers]
-    # inputs = tokenizer(prompt, return_tensors="pt")
-    
-    return
     # ====== Establish tokenizer ======
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     special_tokens_dict = dict()
@@ -232,17 +223,14 @@ def run_eval_extract_embeddings(
         tokenizer.save_pretrained(model_path)
     
     # ====== Load model ======
-    try:
-        model = LLM(model=model_path, tensor_parallel_size=tp_size)
-    except RecursionError:
-        model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
+    model = LlamaForCausalLM.from_pretrained(model_path, output_hidden_states=True)
     print("=====================")
     print('Model Loaded')
     print("=====================")
     
     # Sampling parameters (with log probabliities)
     # sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=tokenizer.vocab_size)
-    # Sampling parameters (without)
+    # Sampling parameters (without) [Unused]
     sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
 
     # ===== Configure prompts ======
@@ -261,23 +249,30 @@ def run_eval_extract_embeddings(
         prompt = conv.get_prompt()
         prompts.append(prompt)
         tokens.append(tokenizer(prompt))
-        seq_data = SequenceData(model.llm_engine.tokenizer.encode(prompt))
-        seq = SequenceGroupMetadata(
-            request_id=str(i),
-            is_prompt=True,
-            seq_data={i: seq_data},
-            sampling_params=sampling_params,
-            block_tables=None,
-        )
-        inputs.append(seq)
+        # seq_data = SequenceData(model.llm_engine.tokenizer.encode(prompt))
+        # seq = SequenceGroupMetadata(
+        #     request_id=str(i),
+        #     is_prompt=True,
+        #     seq_data={i: seq_data},
+        #     sampling_params=sampling_params,
+        #     block_tables=None,
+        # )
+        # inputs.append(seq)
 
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
     print("=====================")
-    print(prompts)
+    print("Prompts initialized")
     print("=====================")
 
     # ====== Run model ======    
-    # outputs = model.generate(prompts, sampling_params)
+    with torch.no_grad():
+        outputs = model.generate(tokens, output_hidden_states=True, return_dict_in_generate=True, max_new_tokens=1, min_new_tokens=1)
+    
+    num_layers = model.config.num_hidden_layers
+    last_hidden_state = outputs.hidden_states[0][num_layers-1][0][-1]
+    embeddings = last_hidden_state.numpy().tolist()
+    print(embeddings)
+
     # for i, output in enumerate(outputs):
     #     original_output = output
     #     output_ids = output.outputs[0].token_ids
@@ -332,39 +327,7 @@ def run_eval_extract_embeddings(
     #     os.makedirs(os.path.dirname(answer_file), exist_ok=True)
     #     with open(os.path.expanduser(answer_file), "a") as fout:
     #         fout.write(json.dumps(question) + "\n")
-
-    # ====== GPU optimization ======
-    torch.cuda.empty_cache()
-    torch.cuda.reset_peak_memory_stats()
     
-    # ====== Execute the model for embedding extraction ======
-    print(f"Number of workers: {len(model.llm_engine.workers)}")
-    print(f"Number of layers: {model.llm_engine.model_config.get_num_layers(model.llm_engine.parallel_config)}")
-    # print(model.llm_engine.workers[0].model)
-    transformers_model = model.llm_engine.workers[0].model
-
-    with torch.no_grad():
-        outputs = transformers_model.generate(inputs.input_ids, output_hidden_states=True, return_dict_in_generate=True, max_new_tokens=1, min_new_tokens=1)
-    embeddings = {}
-    num_layers = model.llm_engine.model_config.get_num_layers(model.llm_engine.parallel_config)
-    for layer in [num_layers]:
-        last_hidden_state = outputs.hidden_states[0][layer][0][-1]
-        embeddings[layer] = [last_hidden_state.numpy().tolist()]
-    print(embeddings)
-    
-    # input_tokens, input_positions, input_metadata = model.llm_engine.workers[0]._prepare_inputs(inputs)
-    # print("=====================")
-    # print(model.llm_engine.workers[0].__dir__())
-    # print("=====================")
-
-    # embeddings = model.llm_engine.workers[0].model.model(
-    #     input_ids=input_tokens,
-    #     positions=input_positions,
-    #     kv_caches=[(None, None)] * num_layers,
-    #     input_metadata=input_metadata,
-    #     cache_events=None,
-    # )
-    # print(embeddings.size())
     # # return embeddings
 
 
