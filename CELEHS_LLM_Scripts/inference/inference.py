@@ -105,7 +105,7 @@ register_model_adapter(PretrainFewShotAdapter)
 
 from fastchat.model import get_conversation_template
 import numpy as numpy
-from transformers import AutoTokenizer, AutoConfig, AutoModel, BertLMHeadModel, BertTokenizer
+from transformers import AutoTokenizer, AutoConfig, LlamaForCausalLM
 
 def run_eval(
     model_path,
@@ -207,16 +207,15 @@ def run_eval_extract_embeddings(
     max_new_token,
     tp_size,
 ):
-    # prompt = "This is an example sentence."
-    # model_name = "bert-base-uncased"
-    # model = BertLMHeadModel.from_pretrained(model_name, output_hidden_states=True)
-    # tokenizer = BertTokenizer.from_pretrained(model_name)
+    prompt = "This is an example sentence."
+    model = LlamaForCausalLM.from_pretrained(model_path, output_hidden_states=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-    # # Define the layers you want to use (for example, layers 10 and 11 in BERT)
+    # Define the layers you want to use (for example, layers 10 and 11 in BERT)
     # layers_to_use = [model.config.num_hidden_layers]
     # inputs = tokenizer(prompt, return_tensors="pt")
     
-    # return
+    return
     # ====== Establish tokenizer ======
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     special_tokens_dict = dict()
