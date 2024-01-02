@@ -248,7 +248,7 @@ def run_eval_extract_embeddings(
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
         prompts.append(prompt)
-        tokens.append(tokenizer(prompt).input_ids)
+        tokens.append(tokenizer(prompt, return_tensors="pt").input_ids)
         # seq_data = SequenceData(model.llm_engine.tokenizer.encode(prompt))
         # seq = SequenceGroupMetadata(
         #     request_id=str(i),
@@ -266,7 +266,7 @@ def run_eval_extract_embeddings(
 
     # ====== Run model ======    
     with torch.no_grad():
-        outputs = model.generate(tokens[0], output_hidden_states=True, return_dict_in_generate=True, max_new_tokens=1, min_new_tokens=1)
+        outputs = model.generate(tokens[0], output_hidden_states=True, temperature=0.7, max_tokens=max_new_token)
     
     num_layers = model.config.num_hidden_layers
     last_hidden_state = outputs.hidden_states[0][num_layers-1][0][-1]
