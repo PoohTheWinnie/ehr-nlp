@@ -207,6 +207,31 @@ def run_eval_extract_embeddings(
     max_new_token,
     tp_size,
 ):
+    import transformers
+    import sys
+    import torch
+
+    model = transformers.AutoModelForCausalLM.from_pretrained(
+            model_path,
+            torch_dtype=torch.bfloat16,
+        )
+    tokenizer = transformers.AutoTokenizer.from_pretrained(
+            model_path,
+            padding_side="right",
+        )
+
+    input_texts = 'Trying to extract embeddings.'
+    print(input_texts)
+    input_ids = tokenizer(input_texts, return_tensors="pt").input_ids
+    print(input_ids)
+    with torch.no_grad():
+        outputs = model(input_ids, return_dict = True, output_hidden_states = True)
+
+    final_layer_embedding = outputs.hidden_states[-1]
+    print(final_layer_embedding.shape)
+
+    return
+
     # ====== Establish tokenizer ======
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     special_tokens_dict = dict()
