@@ -12,7 +12,9 @@ tokenizer = transformers.AutoTokenizer.from_pretrained(
     )
 
 input_texts = 'Trying to extract embeddings.'
+print(input_texts)
 input_ids = tokenizer(input_texts, return_tensors="pt").input_ids
+print(input_ids)
 with torch.no_grad():
      outputs = model(input_ids, return_dict = True, output_hidden_states = True)
 
