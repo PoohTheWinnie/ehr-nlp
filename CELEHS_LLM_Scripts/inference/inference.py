@@ -260,11 +260,21 @@ def run_eval_extract_embeddings(
             
             # Compute the model output
             output = model(input, return_dict=True, output_hidden_states=True)
-            text_output = tokenizer.decode(output.logits.argmax(dim=-1), skip_special_tokens=True)
+        
+            # Decode each sequence in the output
+            for sequence in output.logits:
+                # Convert the logits to token IDs for each sequence
+                token_ids = sequence.argmax(dim=-1)
+                
+                # Decode the token IDs to text
+                text_output = tokenizer.decode(token_ids, skip_special_tokens=True)
+                
+                # Append the decoded text to the list of outputs
+                print(text_output)
 
             # Append the output to the list of outputs.
-            outputs.append(text_output)
-            print(text_output + "\n")
+            # outputs.append(text_output)
+            # print(text_output + "\n")
             embeddings.append(output.hidden_states[-1])
     print(embeddings[0])
 
