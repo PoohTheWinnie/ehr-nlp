@@ -271,7 +271,7 @@ def run_eval_extract_embeddings(
             )
             if conv.stop_str and output.find(conv.stop_str) > 0:
                 output = output[: output.find(conv.stop_str)]
-            for special_token in model.get_tokenizer().special_tokens_map.values():
+            for special_token in tokenizer.special_tokens_map.values():
                 if isinstance(special_token, list):
                     for special_tok in special_token:
                         output = output.replace(special_tok, "")
