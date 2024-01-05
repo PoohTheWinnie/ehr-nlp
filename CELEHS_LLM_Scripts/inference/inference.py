@@ -265,7 +265,9 @@ def run_eval_extract_embeddings(
             token_ids = []
             for sequence in model_output.logits:
                 token_ids.append(sequence.argmax(dim=-1))
-                
+            
+            print(token_ids)
+
             output = tokenizer.decode(
                 token_ids,
                 spaces_between_special_tokens=False,
