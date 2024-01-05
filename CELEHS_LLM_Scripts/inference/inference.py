@@ -248,7 +248,7 @@ def run_eval_extract_embeddings(
 
     # ====== Run model ======    
     # Check if CUDA is available and use it; otherwise, use CPU
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda')
     model.to(device)  # Move the model to the GPU
 
     with torch.no_grad():
