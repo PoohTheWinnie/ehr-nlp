@@ -243,10 +243,11 @@ def run_eval_extract_embeddings(
         inputs.append(tokenizer(prompt, return_tensors="pt").input_ids)
 
     with torch.no_grad():
-        outputs = model(inputs, return_dict = True, output_hidden_states = True)
-        # outputs = model(outputs, return_dict = True, output_hidden_states = True)
-
-    print(outputs)
+        outputs = []
+        for input in inputs:
+            output = model(input, return_dict = True, output_hidden_states = True)
+            outputs.append(output)
+    print(outputs[0])
     final_layer_embedding = outputs.hidden_states[-1]
     print(final_layer_embedding.shape)
 
