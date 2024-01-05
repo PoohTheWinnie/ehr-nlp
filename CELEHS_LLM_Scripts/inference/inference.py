@@ -259,23 +259,32 @@ def run_eval_extract_embeddings(
             input = input.to(device)
             
             # Compute the model output
-            output = model(input, return_dict=True, output_hidden_states=True)
+            model_output = model(input, return_dict=True, output_hidden_states=True)
         
             # Decode each sequence in the output
-            for sequence in output.logits:
-                # Convert the logits to token IDs for each sequence
-                token_ids = sequence.argmax(dim=-1)
+            token_ids = []
+            for sequence in model_output.logits:
+                token_ids.append(sequence.argmax(dim=-1))
                 
-                # Decode the token IDs to text
-                text_output = tokenizer.decode(token_ids, skip_special_tokens=True)
-                
-                # Append the decoded text to the list of outputs
-                print(text_output)
+            output = tokenizer.decode(
+                token_ids,
+                spaces_between_special_tokens=False,
+            )
+            if conv.stop_str and output.find(conv.stop_str) > 0:
+                output = output[: output.find(conv.stop_str)]
+            for special_token in model.get_tokenizer().special_tokens_map.values():
+                if isinstance(special_token, list):
+                    for special_tok in special_token:
+                        output = output.replace(special_tok, "")
+                else:
+                    output = output.replace(special_token, "")
+            output = output.strip()
+            print(output + "\n")
 
-            # Append the output to the list of outputs.
-            # outputs.append(text_output)
-            # print(text_output + "\n")
+            # Append outputs
+            outputs.append(output)
             embeddings.append(output.hidden_states[-1])
+    
     print(embeddings[0])
 
 if __name__ == "__main__":
