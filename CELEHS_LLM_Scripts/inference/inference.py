@@ -207,33 +207,8 @@ def run_eval_extract_embeddings(
     max_new_token,
     tp_size,
 ):
-    import transformers
-    import sys
-    import torch
-
-    model = transformers.AutoModelForCausalLM.from_pretrained(
-            model_path,
-            torch_dtype=torch.bfloat16,
-        )
-    tokenizer = transformers.AutoTokenizer.from_pretrained(
-            model_path,
-            padding_side="right",
-        )
-
-    input_texts = 'Trying to extract embeddings.'
-    print(input_texts)
-    input_ids = tokenizer(input_texts, return_tensors="pt").input_ids
-    print(input_ids)
-    with torch.no_grad():
-        outputs = model(input_ids, return_dict = True, output_hidden_states = True)
-
-    final_layer_embedding = outputs.hidden_states[-1]
-    print(final_layer_embedding.shape)
-
-    return
-
     # ====== Establish tokenizer ======
-    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, padding_side="right")
     special_tokens_dict = dict()
     if tokenizer.pad_token is None:
         special_tokens_dict["pad_token"] = '<pad>'
@@ -246,17 +221,34 @@ def run_eval_extract_embeddings(
     if len(special_tokens_dict) > 0:
         tokenizer.add_special_tokens(special_tokens_dict)
         tokenizer.save_pretrained(model_path)
-    
+
     # ====== Load model ======
-    model = LlamaForCausalLM.from_pretrained(model_path, output_hidden_states=True)
+    model = transformers.AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
     print("=====================")
     print('Model Loaded')
     print("=====================")
-    
-    # Sampling parameters (with log probabliities)
-    # sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=tokenizer.vocab_size)
-    # Sampling parameters (without) [Unused]
-    sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
+
+    # ===== Configure input prompts ======
+    inputs = []
+    for i, item in tqdm(enumerate(questions)):
+        torch.manual_seed(0)
+        if 'llama' in model_id.lower() and 'chat' not in model_id.lower():
+            conv = get_conversation_template('pretrainfewshot')
+        else:
+            conv = get_conversation_template(model_id)
+        qs = few_shot_question_template.format(context=item['context'], question=item["question"])
+        conv.append_message(conv.roles[0], qs)
+        conv.append_message(conv.roles[1], None)
+        prompt = conv.get_prompt()
+        inputs.append(tokenizer(prompt, return_tensors="pt").input_ids)
+
+    with torch.no_grad():
+        outputs = model(inputs, return_dict = True, output_hidden_states = True)
+
+    final_layer_embedding = outputs.hidden_states[-1]
+    print(final_layer_embedding.shape)
+
+    return
 
     # ===== Configure prompts ======
     prompts = []
