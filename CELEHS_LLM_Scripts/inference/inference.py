@@ -263,7 +263,7 @@ def run_eval_extract_embeddings(
             # Append the output to the list of outputs
             # Note: output is on GPU. You might want to move it back to CPU if you are
             # doing further processing that doesn't need to be on GPU.
-            outputs.append(output.cpu())  # Move output to CPU if necessary
+            outputs.append(output)  # Move output to CPU if necessary
 
     print(outputs[0])
     final_layer_embedding = outputs.hidden_states[-1]
