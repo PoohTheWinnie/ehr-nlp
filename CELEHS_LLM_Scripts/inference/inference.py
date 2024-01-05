@@ -247,12 +247,24 @@ def run_eval_extract_embeddings(
     print("=====================")
 
     # ====== Run model ======    
+    # Check if CUDA is available and use it; otherwise, use CPU
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)  # Move the model to the GPU
 
     with torch.no_grad():
         outputs = []
         for input in tqdm(inputs):
-            output = model(input, return_dict = True, output_hidden_states = True)
-            outputs.append(output)
+            # Move your input data to the GPU
+            input = input.to(device)
+            
+            # Compute the model output
+            output = model(input, return_dict=True, output_hidden_states=True)
+            
+            # Append the output to the list of outputs
+            # Note: output is on GPU. You might want to move it back to CPU if you are
+            # doing further processing that doesn't need to be on GPU.
+            outputs.append(output.cpu())  # Move output to CPU if necessary
+
     print(outputs[0])
     final_layer_embedding = outputs.hidden_states[-1]
     print(final_layer_embedding.shape)
