@@ -251,7 +251,6 @@ def run_eval_extract_embeddings(
     device = torch.device('cuda')
     model.to(device)  # Move the model to the GPU
 
-
     with torch.no_grad():
         outputs = []
         embeddings = []
@@ -261,15 +260,13 @@ def run_eval_extract_embeddings(
             
             # Compute the model output
             output = model(input, return_dict=True, output_hidden_states=True)
-            
+            text_output = tokenizer.decode(output.logits.argmax(dim=-1), skip_special_tokens=True)
+
             # Append the output to the list of outputs.
-            outputs.append(output)
-            embeddings.append()
-
-    print(outputs[0])
-    return
-
-
+            outputs.append(text_output)
+            print(text_output + "\n")
+            embeddings.append(output.hidden_states[-1])
+    print(embeddings[0])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
