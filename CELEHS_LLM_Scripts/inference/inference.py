@@ -262,7 +262,7 @@ def run_eval_extract_embeddings(
             model_output = model(input, return_dict=True, output_hidden_states=True)
         
             # Decode each sequence in the output
-            token_ids = model_output.logits.argmax(dim=-1).tolist()
+            token_ids = model_output.logits.argmax(dim=-1).tolist()[0]
             print(token_ids)
 
             output = tokenizer.decode(
