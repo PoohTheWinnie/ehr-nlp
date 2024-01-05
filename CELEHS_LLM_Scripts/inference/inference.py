@@ -244,8 +244,9 @@ def run_eval_extract_embeddings(
 
     with torch.no_grad():
         outputs = model(inputs, return_dict = True, output_hidden_states = True)
-        outputs = model(outputs, return_dict = True, output_hidden_states = True)
+        # outputs = model(outputs, return_dict = True, output_hidden_states = True)
 
+    print(outputs)
     final_layer_embedding = outputs.hidden_states[-1]
     print(final_layer_embedding.shape)
 
