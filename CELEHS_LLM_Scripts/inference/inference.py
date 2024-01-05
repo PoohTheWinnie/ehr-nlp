@@ -3,10 +3,10 @@ import json
 import os
 import re
 import torch
+import transformers
 import pandas as pd
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
-from vllm.sequence import SequenceData, SequenceGroupMetadata
 from fastchat.model.model_adapter import model_adapters, register_model_adapter, BaseModelAdapter
 from fastchat.conversation import conv_templates, register_conv_template, Conversation, SeparatorStyle, get_conv_template
 
