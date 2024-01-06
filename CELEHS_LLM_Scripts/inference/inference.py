@@ -222,13 +222,13 @@ def run_eval_extract_embeddings(
 
     # ====== Load model ======
     model = transformers.AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
-    # print("=====================")
-    # print('Model Loaded')
-    # print("=====================")
+    print("=====================")
+    print('Model Loaded')
+    print("=====================")
 
     # ===== Configure input prompts ======
     inputs = []
-    for item in tqdm(questions):
+    for item in tqdm(questions, desc="Prompt Initialization: "):
         torch.manual_seed(0)
         if 'llama' in model_id.lower() and 'chat' not in model_id.lower():
             conv = get_conversation_template('pretrainfewshot')
@@ -240,10 +240,6 @@ def run_eval_extract_embeddings(
         prompt = conv.get_prompt()
         inputs.append(tokenizer(prompt, return_tensors="pt"))
 
-    # print("=====================")
-    # print("Prompts initialized")
-    # print("=====================")
-
     # ====== Run model ======    
     # Check if CUDA is available and use it; otherwise, use CPU
     device = torch.device('cuda')
@@ -252,7 +248,7 @@ def run_eval_extract_embeddings(
     with torch.no_grad():
         outputs = []
         embeddings = []
-        for input in tqdm(inputs):
+        for input in tqdm(inputs, desc="Model Running: "):
             # Move your input data to the GPU
             input = input.to(device)
             
@@ -260,10 +256,11 @@ def run_eval_extract_embeddings(
 
             generated_tokens_ids = model_outputs.sequences[0]
 
-            print(tokenizer.decode(generated_tokens_ids))
+            print(generated_tokens_ids)
+            # print(tokenizer.decode(generated_tokens_ids))
 
             # Compute the model output
-            model_output = model(input, return_dict=True, output_hidden_states=True)
+            model_output = model(input.input_ids, return_dict=True, output_hidden_states=True)
         
             # Decode each sequence in the output
             token_ids = model_output.logits.argmax(dim=-1).tolist()[0]
