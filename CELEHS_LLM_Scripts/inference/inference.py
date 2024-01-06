@@ -256,21 +256,20 @@ def run_eval_extract_embeddings(
             # Move your input data to the GPU
             input = input.to(device)
             
-            model_outputs = model.generate(**input, max_new_tokens=1024, return_dict_in_generate=True, output_scores=True)
+            model_outputs = model.generate(**input, max_new_tokens=1024, return_dict_in_generate=True, output_scores=True, do_sample=True, temperature=0.7)
 
             generated_tokens_ids = model_outputs.sequences[0]
 
             print(tokenizer.decode(generated_tokens_ids))
 
-
-            break
             # Compute the model output
-            # model_output = model(input, return_dict=True, output_hidden_states=True)
+            model_output = model(input, return_dict=True, output_hidden_states=True)
         
             # Decode each sequence in the output
             token_ids = model_output.logits.argmax(dim=-1).tolist()[0]
             print(token_ids)
 
+            break
             output = tokenizer.decode(
                 token_ids,
                 spaces_between_special_tokens=False,
@@ -345,14 +344,6 @@ if __name__ == "__main__":
     print(f"Conv Template: {get_conversation_template(args.model_id)}")
     
     run_eval_extract_embeddings(
-        args.model_path,
-        args.model_id,
-        questions,
-        args.answer_file,
-        args.max_new_token,
-        tp_size,
-    )
-    run_eval(
         args.model_path,
         args.model_id,
         questions,
