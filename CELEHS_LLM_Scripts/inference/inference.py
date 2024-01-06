@@ -132,7 +132,7 @@ def run_eval(
         model = LLM(model=model_path, tensor_parallel_size=tp_size)
     except RecursionError:
         model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
-        
+
     sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
 
     prompts = []
@@ -260,7 +260,8 @@ def run_eval_extract_embeddings(
 
             generated_tokens_ids = model_outputs.sequences[0]
 
-            print(generated_tokens_ids.tolist())
+            print(tokenizer.decode(generated_tokens_ids))
+
 
             break
             # Compute the model output
