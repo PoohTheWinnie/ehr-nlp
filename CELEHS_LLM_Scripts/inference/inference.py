@@ -252,7 +252,7 @@ def run_eval_extract_embeddings(
             # Move your input data to the GPU
             input = input.to(device)
             
-            model_outputs = model.generate(**input, max_new_tokens=1024, return_dict_in_generate=True, output_scores=True, do_sample=True, temperature=0.7)
+            model_outputs = model.generate(**input, return_dict_in_generate=True, output_scores=True)
 
             generated_tokens_ids = model_outputs.sequences[0]
 

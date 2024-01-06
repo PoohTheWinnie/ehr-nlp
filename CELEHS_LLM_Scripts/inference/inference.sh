@@ -1,3 +1,4 @@
+git pull
 
 MODEL_PATH=$1
 INPUT_FILE=$2
