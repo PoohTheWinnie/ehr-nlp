@@ -252,26 +252,13 @@ def run_eval_extract_embeddings(
             # Move your input data to the GPU
             input = input.to(device)
             
-            model_outputs = model.generate(**input, return_dict_in_generate=True, output_scores=True)
+            genereated = model.generate(**input, return_dict_in_generate=True, output_scores=True)
+            generated_tokens_ids = genereated.sequences[0]
 
-            generated_tokens_ids = model_outputs.sequences[0]
+            output = tokenizer.decode(generated_tokens_ids)
+            print(output)
+            print("=========")
 
-            print(generated_tokens_ids.tolist())
-            print("==========")
-            # print(tokenizer.decode(generated_tokens_ids))
-
-            # Compute the model output
-            model_output = model(input.input_ids, return_dict=True, output_hidden_states=True)
-        
-            # Decode each sequence in the output
-            token_ids = model_output.logits.argmax(dim=-1).tolist()[0]
-            print(token_ids)
-
-            break
-            output = tokenizer.decode(
-                token_ids,
-                spaces_between_special_tokens=False,
-            )
             if conv.stop_str and output.find(conv.stop_str) > 0:
                 output = output[: output.find(conv.stop_str)]
             for special_token in tokenizer.special_tokens_map.values():
@@ -280,13 +267,16 @@ def run_eval_extract_embeddings(
                         output = output.replace(special_tok, "")
                 else:
                     output = output.replace(special_token, "")
-            output = output.strip()
-            print(output + "\n")
+            outputs.append(output.strip())
+            
+            print(output.strip() + "\n")
 
-            # Append outputs
-            outputs.append(output)
-            embeddings.append(model_output.hidden_states[-1])
-            break
+            # Compute the embeddings of the generated output tokens
+            # model_output = model(generated_tokens_ids.tolist(), return_dict=True, output_hidden_states=True)
+            # embeddings.append(model_output.hidden_states[-1])
+    
+            
+            
     
     # print(embeddings[0])
 
