@@ -256,7 +256,8 @@ def run_eval_extract_embeddings(
 
             generated_tokens_ids = model_outputs.sequences[0]
 
-            print(generated_tokens_ids.tolist()[0])
+            print(generated_tokens_ids.tolist())
+            print("==========")
             # print(tokenizer.decode(generated_tokens_ids))
 
             # Compute the model output
