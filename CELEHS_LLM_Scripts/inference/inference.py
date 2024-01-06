@@ -238,7 +238,7 @@ def run_eval_extract_embeddings(
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
-        inputs.append(tokenizer(prompt, return_tensors="pt").input_ids)
+        inputs.append(tokenizer(prompt, return_tensors="pt"))
 
     print("=====================")
     print("Prompts initialized")
@@ -256,8 +256,11 @@ def run_eval_extract_embeddings(
             # Move your input data to the GPU
             input = input.to(device)
             
-            output_ids = model.generate(input, return_dict=True, output_hidden_states=True)
-            print(output_ids)
+            model_outputs = model.generate(**inputs, max_new_tokens=1024, return_dict_in_generate=True, output_scores=True)
+
+            generated_tokens_ids = model_outputs.sequences[0]
+
+            print(generated_tokens_ids)
 
             break
             # Compute the model output
