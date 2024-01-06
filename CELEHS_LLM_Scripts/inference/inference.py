@@ -132,7 +132,7 @@ def run_eval(
         model = LLM(model=model_path, tensor_parallel_size=tp_size)
     except RecursionError:
         model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
-    print('model loadeds')
+        
     sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
 
     prompts = []
@@ -222,9 +222,9 @@ def run_eval_extract_embeddings(
 
     # ====== Load model ======
     model = transformers.AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
-    print("=====================")
-    print('Model Loaded')
-    print("=====================")
+    # print("=====================")
+    # print('Model Loaded')
+    # print("=====================")
 
     # ===== Configure input prompts ======
     inputs = []
@@ -240,9 +240,9 @@ def run_eval_extract_embeddings(
         prompt = conv.get_prompt()
         inputs.append(tokenizer(prompt, return_tensors="pt"))
 
-    print("=====================")
-    print("Prompts initialized")
-    print("=====================")
+    # print("=====================")
+    # print("Prompts initialized")
+    # print("=====================")
 
     # ====== Run model ======    
     # Check if CUDA is available and use it; otherwise, use CPU
@@ -260,7 +260,7 @@ def run_eval_extract_embeddings(
 
             generated_tokens_ids = model_outputs.sequences[0]
 
-            print(generated_tokens_ids)
+            print(generated_tokens_ids.tolist())
 
             break
             # Compute the model output
@@ -290,7 +290,7 @@ def run_eval_extract_embeddings(
             embeddings.append(model_output.hidden_states[-1])
             break
     
-    print(embeddings[0])
+    # print(embeddings[0])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
