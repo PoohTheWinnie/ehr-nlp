@@ -135,8 +135,6 @@ def run_eval(
     print('model loadeds')
     sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=tokenizer.vocab_size)
 
-    print(f"Token vocabulary size: {tokenizer.vocab_size}")
-
     prompts = []
 
     # if conv.name=='eevee':
@@ -155,8 +153,6 @@ def run_eval(
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
         prompts.append(prompt)
-        print(prompt)
-        print("======")
 
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
 
@@ -164,6 +160,8 @@ def run_eval(
 
     for i, output in enumerate(outputs):
         output_ids = output.outputs[0].token_ids
+        print(output_ids)
+        break
         question = questions[prompt_id_map[output.prompt]]
 
         # be consistent with the template's stop_token_ids
@@ -282,7 +280,8 @@ def run_eval_extract_embeddings(
 
             # Append outputs
             outputs.append(output)
-            embeddings.append(output.hidden_states[-1])
+            embeddings.append(model_output.hidden_states[-1])
+            break
     
     print(embeddings[0])
 
@@ -338,6 +337,14 @@ if __name__ == "__main__":
     print(f"Conv Template: {get_conversation_template(args.model_id)}")
     
     run_eval_extract_embeddings(
+        args.model_path,
+        args.model_id,
+        questions,
+        args.answer_file,
+        args.max_new_token,
+        tp_size,
+    )
+    run_eval(
         args.model_path,
         args.model_id,
         questions,
