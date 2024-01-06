@@ -256,8 +256,12 @@ def run_eval_extract_embeddings(
             # Move your input data to the GPU
             input = input.to(device)
             
+            output_ids = model.generate(input, return_dict=True, output_hidden_states=True)
+            print(output_ids)
+
+            break
             # Compute the model output
-            model_output = model(input, return_dict=True, output_hidden_states=True)
+            # model_output = model(input, return_dict=True, output_hidden_states=True)
         
             # Decode each sequence in the output
             token_ids = model_output.logits.argmax(dim=-1).tolist()[0]
