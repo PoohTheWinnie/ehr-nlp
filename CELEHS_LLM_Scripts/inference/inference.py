@@ -342,7 +342,7 @@ if __name__ == "__main__":
     print(f"Num Questions: {len(questions)}")
     print(f"Conv Template: {get_conversation_template(args.model_id)}")
     
-    run_eval(
+    run_eval_extract_embeddings(
         args.model_path,
         args.model_id,
         questions,
