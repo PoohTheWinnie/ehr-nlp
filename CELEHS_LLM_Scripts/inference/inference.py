@@ -158,10 +158,8 @@ def run_eval(
 
     outputs = model.generate(prompts, sampling_params)
 
-    for i, output in enumerate(outputs):
+    for output in outputs:
         output_ids = output.outputs[0].token_ids
-        print(output_ids)
-        break
         question = questions[prompt_id_map[output.prompt]]
 
         # be consistent with the template's stop_token_ids
@@ -188,6 +186,10 @@ def run_eval(
                 output = output.replace(special_token, "")
         output = output.strip()
 
+        raw_model = model.llm_engine.workers[0].model
+        output_tokens = tokenizer(output, return_tensors="pt").input_ids
+        model_output = raw_model(output_tokens, return_dict=True, output_hidden_states=True)
+        print(model_output.hidden_states[-1])
 
         question['output'] = output
         question['generator'] = model_id
@@ -252,8 +254,9 @@ def run_eval_extract_embeddings(
             # Move your input data to the GPU
             input = input.to(device)
             
-            genereated = model.generate(**input, return_dict_in_generate=True, output_scores=True)
-            generated_tokens_ids = genereated.sequences[0]
+            generated = model.generate(**input, return_dict_in_generate=True, output_scores=True)
+            print(len(generated.sequences))
+            generated_tokens_ids = generated.sequences[0]
 
             output = tokenizer.decode(generated_tokens_ids)
             print(output)
@@ -267,13 +270,12 @@ def run_eval_extract_embeddings(
                         output = output.replace(special_tok, "")
                 else:
                     output = output.replace(special_token, "")
-            outputs.append(output.strip())
             
             print(output.strip() + "\n")
 
             # Compute the embeddings of the generated output tokens
-            # model_output = model(generated_tokens_ids.tolist(), return_dict=True, output_hidden_states=True)
-            # embeddings.append(model_output.hidden_states[-1])
+            model_output = model(generated_tokens_ids.tolist(), return_dict=True, output_hidden_states=True)
+            embeddings.append(model_output.hidden_states[-1])
     
             
             
@@ -331,7 +333,7 @@ if __name__ == "__main__":
     print(f"Num Questions: {len(questions)}")
     print(f"Conv Template: {get_conversation_template(args.model_id)}")
     
-    run_eval_extract_embeddings(
+    run_eval(
         args.model_path,
         args.model_id,
         questions,
