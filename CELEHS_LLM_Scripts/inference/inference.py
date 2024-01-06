@@ -133,7 +133,7 @@ def run_eval(
     except RecursionError:
         model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
     print('model loadeds')
-    sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token, logprobs=tokenizer.vocab_size)
+    sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
 
     prompts = []
 
@@ -336,14 +336,14 @@ if __name__ == "__main__":
     print(f"Num Questions: {len(questions)}")
     print(f"Conv Template: {get_conversation_template(args.model_id)}")
     
-    run_eval_extract_embeddings(
-        args.model_path,
-        args.model_id,
-        questions,
-        args.answer_file,
-        args.max_new_token,
-        tp_size,
-    )
+    # run_eval_extract_embeddings(
+    #     args.model_path,
+    #     args.model_id,
+    #     questions,
+    #     args.answer_file,
+    #     args.max_new_token,
+    #     tp_size,
+    # )
     run_eval(
         args.model_path,
         args.model_id,
