@@ -1,7 +1,7 @@
 import argparse
 import json
 import os
-import re
+import time
 import torch
 import transformers
 import pandas as pd
@@ -207,6 +207,7 @@ def run_eval_extract_embeddings(
     max_new_token,
     tp_size,
 ):
+    start_time = time.time()
     # ====== Establish tokenizer ======
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, padding_side="right")
     special_tokens_dict = dict()
@@ -247,8 +248,8 @@ def run_eval_extract_embeddings(
 
     # ====== Run model ======    
     outputs = model.generate(prompts, sampling_params)
+    
     token_ids = []
-
     for output in tqdm(outputs, desc="Generate text output: "):
         output_ids = output.outputs[0].token_ids
         # be consistent with the template's stop_token_ids
@@ -275,21 +276,27 @@ def run_eval_extract_embeddings(
                 output = output.replace(special_token, "")
         output = output.strip()
         token_ids.append(tokenizer(output, return_tensors="pt").input_ids)
-    # Check if CUDA is available and use it; otherwise, use CPU
+    
+    # ====== Extract embeddings ======    
     device = torch.device('cuda')
     model = transformers.AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
-    model.to(device)  # Move the model to the GPU
+    model.to(device)
 
     with torch.no_grad():
         outputs = []
         embeddings = []
         for input in tqdm(token_ids, desc="Extracting embeddings: "):
-            # Move your input data to the GPU
             input = input.to(device)
             model_output = model(input, return_dict=True, output_hidden_states=True)
             embeddings.append(model_output.hidden_states[-1])
-    
-    print(embeddings[0].size())
+
+            print(len(input))
+            print(model_output.hidden_states[-1].size())
+            
+
+    # ====== Extract embeddings ======    
+    end_time = time.time()
+    print(f"Total runtime: {str(end_time-start_time)} seconds")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
