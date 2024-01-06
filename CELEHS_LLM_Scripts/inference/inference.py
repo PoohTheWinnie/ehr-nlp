@@ -223,13 +223,15 @@ def run_eval_extract_embeddings(
         tokenizer.save_pretrained(model_path)
 
     # ====== Load model ======
-    model = transformers.AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
-    print("=====================")
-    print('Model Loaded')
-    print("=====================")
+    try:
+        model = LLM(model=model_path, tensor_parallel_size=tp_size)
+    except RecursionError:
+        model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
+    sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
 
     # ===== Configure input prompts ======
     inputs = []
+    prompts = []
     for item in tqdm(questions, desc="Prompt Initialization: "):
         torch.manual_seed(0)
         if 'llama' in model_id.lower() and 'chat' not in model_id.lower():
@@ -240,47 +242,54 @@ def run_eval_extract_embeddings(
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
+        prompts.append(prompt)
         inputs.append(tokenizer(prompt, return_tensors="pt"))
 
     # ====== Run model ======    
+    outputs = model.generate(prompts, sampling_params)
+    token_ids = []
+
+    for output in tqdm(outputs, desc="Generate text output: "):
+        output_ids = output.outputs[0].token_ids
+        # be consistent with the template's stop_token_ids
+        if conv.stop_token_ids:
+            stop_token_ids_index = [
+                i
+                for i, id in enumerate(output_ids)
+                if id in conv.stop_token_ids
+            ]
+            if len(stop_token_ids_index) > 0:
+                output_ids = output_ids[: stop_token_ids_index[0]]
+
+        output = model.get_tokenizer().decode(
+            output_ids,
+            spaces_between_special_tokens=False,
+        )
+        if conv.stop_str and output.find(conv.stop_str) > 0:
+            output = output[: output.find(conv.stop_str)]
+        for special_token in model.get_tokenizer().special_tokens_map.values():
+            if isinstance(special_token, list):
+                for special_tok in special_token:
+                    output = output.replace(special_tok, "")
+            else:
+                output = output.replace(special_token, "")
+        output = output.strip()
+        token_ids.append(tokenizer(output, return_tensors="pt").input_ids)
     # Check if CUDA is available and use it; otherwise, use CPU
     device = torch.device('cuda')
+    model = transformers.AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
     model.to(device)  # Move the model to the GPU
 
     with torch.no_grad():
         outputs = []
         embeddings = []
-        for input in tqdm(inputs, desc="Model Running: "):
+        for input in tqdm(token_ids, desc="Extracting embeddings: "):
             # Move your input data to the GPU
             input = input.to(device)
-            
-            generated = model.generate(**input, return_dict_in_generate=True, output_scores=True)
-            print(len(generated.sequences))
-            generated_tokens_ids = generated.sequences[0]
-
-            output = tokenizer.decode(generated_tokens_ids)
-            print(output)
-            print("=========")
-
-            if conv.stop_str and output.find(conv.stop_str) > 0:
-                output = output[: output.find(conv.stop_str)]
-            for special_token in tokenizer.special_tokens_map.values():
-                if isinstance(special_token, list):
-                    for special_tok in special_token:
-                        output = output.replace(special_tok, "")
-                else:
-                    output = output.replace(special_token, "")
-            
-            print(output.strip() + "\n")
-
-            # Compute the embeddings of the generated output tokens
-            model_output = model(generated_tokens_ids.tolist(), return_dict=True, output_hidden_states=True)
+            model_output = model(input, return_dict=True, output_hidden_states=True)
             embeddings.append(model_output.hidden_states[-1])
     
-            
-            
-    
-    # print(embeddings[0])
+    print(embeddings[0].size())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
