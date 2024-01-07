@@ -206,6 +206,7 @@ def run_eval_extract_embeddings(
     answer_file,
     max_new_token,
     tp_size,
+    embedding_type=None
 ):
     start_time = time.time()
     # ====== Establish tokenizer ======
@@ -248,10 +249,13 @@ def run_eval_extract_embeddings(
 
     # ====== Run model ======    
     outputs = model.generate(prompts, sampling_params)
-    
+    prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
+
     token_ids = []
     for output in tqdm(outputs, desc="Generate text output: "):
         output_ids = output.outputs[0].token_ids
+        question = questions[prompt_id_map[output.prompt]]
+
         # be consistent with the template's stop_token_ids
         if conv.stop_token_ids:
             stop_token_ids_index = [
@@ -276,25 +280,41 @@ def run_eval_extract_embeddings(
                 output = output.replace(special_token, "")
         output = output.strip()
         token_ids.append(tokenizer(output, return_tensors="pt").input_ids)
+
+        question['output'] = output
+        question['generator'] = model_id
+
+        # Dump answers
+        os.makedirs(os.path.dirname(answer_file), exist_ok=True)
+        with open(os.path.expanduser(answer_file), "a") as fout:
+            fout.write(json.dumps(question) + "\n")
     
-    # ====== Extract embeddings ======    
+    # ====== Extract embeddings ======  
+    if embedding_type is None:
+        end_time = time.time()
+        print(f"Total runtime: {str(end_time-start_time)} seconds")
     device = torch.device('cuda')
     model = transformers.AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
     model.to(device)
-
+    
+    embeddings = []
     with torch.no_grad():
         outputs = []
         embeddings = []
         for input in tqdm(token_ids, desc="Extracting embeddings: "):
             input = input.to(device)
             model_output = model(input, return_dict=True, output_hidden_states=True)
-            embeddings.append(model_output.hidden_states[-1])
-
-            print(len(input))
-            print(model_output.hidden_states[-1].size())
-            
-
-    # ====== Extract embeddings ======    
+            if embedding_type == "Head":
+                embeddings.append(model_output.hidden_states[-1][0, 0, :])
+            if embedding_type == "Average":
+                average_embedding = torch.mean(model_output.hidden_states[-1], dim=1)
+                flattened_embedding = average_embedding.view(-1)
+                embeddings.append(flattened_embedding.tolist())
+    embeddings = pd.DataFrame(embeddings)
+    embeddings = embeddings.T
+    embeddings.to_csv(os.path.dirname(answer_file) + "embeddings.csv", sep='\t', encoding='utf-8')
+    
+    # ====== Runtime ======    
     end_time = time.time()
     print(f"Total runtime: {str(end_time-start_time)} seconds")
 
@@ -356,4 +376,5 @@ if __name__ == "__main__":
         args.answer_file,
         args.max_new_token,
         tp_size,
+        embedding_type="Average"
     )
