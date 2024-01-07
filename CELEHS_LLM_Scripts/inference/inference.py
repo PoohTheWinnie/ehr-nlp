@@ -226,9 +226,9 @@ def run_eval_extract_embeddings(
 
     # ====== Load model ======
     try:
-        model = LLM(model=model_path, tensor_parallel_size=tp_size)
+        model = LLM(model=model_path, tensor_parallel_size=tp_size, gpu_memory_utilization=0.9)
     except RecursionError:
-        model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size)
+        model = LLM(model=model_path, tokenizer_mode='slow', tensor_parallel_size=tp_size, gpu_memory_utilization=0.9)
     sampling_params = SamplingParams(temperature=0.7, max_tokens=max_new_token)
 
     # ===== Configure input prompts ======
@@ -305,16 +305,16 @@ def run_eval_extract_embeddings(
         for input in tqdm(token_ids, desc="Extracting embeddings: "):
             input = input.to(device)
             model_output = model(input, return_dict=True, output_hidden_states=True)
-            print(model_output.hidden_states[-1][0, 0, :])
+            print(model_output.hidden_states[-1][0, 0, :].tolist())
             if embedding_type == "Head":
-                embeddings.append(model_output.hidden_states[-1][0, 0, :])
+                embeddings.append(model_output.hidden_states[-1][0, 0, :].tolist())
             if embedding_type == "Average":
                 average_embedding = torch.mean(model_output.hidden_states[-1], dim=1)
                 flattened_embedding = average_embedding.view(-1)
                 embeddings.append(flattened_embedding.tolist())
     embeddings = pd.DataFrame(embeddings)
     embeddings = embeddings.T
-    embeddings.to_csv(os.path.dirname(answer_file) + "embeddings.csv", sep='\t', encoding='utf-8')
+    embeddings.to_csv(os.path.dirname(answer_file) + "/embeddings.csv", sep='\t', encoding='utf-8', index=False)
     
     # ====== Runtime ======    
     end_time = time.time()
