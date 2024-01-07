@@ -293,6 +293,7 @@ def run_eval_extract_embeddings(
     if embedding_type is None:
         end_time = time.time()
         print(f"Total runtime: {str(end_time-start_time)} seconds")
+    
     device = torch.device('cuda')
     model = transformers.AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
     model.to(device)
@@ -304,6 +305,7 @@ def run_eval_extract_embeddings(
         for input in tqdm(token_ids, desc="Extracting embeddings: "):
             input = input.to(device)
             model_output = model(input, return_dict=True, output_hidden_states=True)
+            print(model_output.hidden_states[-1][0, 0, :])
             if embedding_type == "Head":
                 embeddings.append(model_output.hidden_states[-1][0, 0, :])
             if embedding_type == "Average":
