@@ -12,7 +12,7 @@ from tqdm import tqdm
 from vllm import LLM, SamplingParams
 from fastchat.model import get_conversation_template
 from fastchat.model.model_adapter import register_model_adapter
-from .templates import EeveeAdapter, FewShotAdapter, PretrainFewShotAdapter
+from templates import EeveeAdapter, FewShotAdapter, PretrainFewShotAdapter
 
 register_model_adapter(EeveeAdapter)
 register_model_adapter(FewShotAdapter)
@@ -223,7 +223,6 @@ if __name__ == "__main__":
         tp_size = 1
 
     print(f"Num Questions: {len(questions)}")
-    print(f"Conv Template: {get_conversation_template(args.model_id)}")
     
     run(
         args.model_path,
