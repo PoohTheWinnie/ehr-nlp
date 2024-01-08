@@ -5,9 +5,7 @@ from fastchat.conversation import register_conv_template, Conversation, Separato
 
 few_shot_question_template = 'Given the contexts: {context}, please answer: {question} '
 
-with open('./few_shot_example.jsonl', 'r') as f:
-    incontext_few_shots = [json.loads(item) for item in f.readlines()]
-
+incontext_few_shots = [{"context": "dummydata", "question": "dummyquestion", "answer": "dummyanswer"}, {"context": "dummydata", "question": "dummyquestion", "answer": "dummyanswer"}]
 messages = [[("Human", few_shot_question_template.format(context=item['context'], question=item["question"])), ("Assistant", item["answer"])] for item in incontext_few_shots]
 messages = tuple(sum(messages, []))
 
