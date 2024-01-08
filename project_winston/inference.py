@@ -12,7 +12,7 @@ from tqdm import tqdm
 from vllm import LLM, SamplingParams
 from fastchat.model import get_conversation_template
 from fastchat.model.model_adapter import register_model_adapter
-from templates import EeveeAdapter, FewShotAdapter, PretrainFewShotAdapter
+from templates import EeveeAdapter, FewShotAdapter, PretrainFewShotAdapter, few_shot_question_template
 
 register_model_adapter(EeveeAdapter)
 register_model_adapter(FewShotAdapter)
