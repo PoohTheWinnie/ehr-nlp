@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 import torch
@@ -17,7 +18,43 @@ register_model_adapter(EeveeAdapter)
 register_model_adapter(FewShotAdapter)
 register_model_adapter(PretrainFewShotAdapter)
 
-def create_embeddings(
+def create_smoking_data():
+    file = "../local/mimic_smoking.csv"
+    dataframe = pd.read_csv(file)
+
+    raw_contexts = []
+    for index, row in dataframe.iterrows():
+        if index == 100:
+            break
+        text = row["text"]
+        sentences = re.findall(r'([^.]*?smoking[^.]*\.)', text)
+        sentences = [sentence.lstrip() for sentence in sentences]
+        raw_contexts.extend(sentences)
+
+    raw_questions = ["Given the fact that the following is an excerpt from a patients doctor's note, is this patient a current smoker, past smoker, or has never smoked before?"] * len(raw_contexts)
+    with open('../celehs_llm_scripts/inference/dummy_data.jsonl', 'w') as f:
+        for idx, item in enumerate(raw_questions):
+            f.write(json.dumps({'sample_idx': idx, 'context': raw_contexts[idx], 'question': item, 'answer': 'I don\'t know.'}) + '\n')
+
+def create_cancer_data():
+    file = "../local/mimic_cancer.csv"
+    dataframe = pd.read_csv(file)
+
+    raw_contexts = []
+    for index, row in dataframe.iterrows():
+        if index == 100:
+            break
+        text = row["text"]
+        sentences = re.findall(r'([^.]*?cancer[^.]*\.)', text)
+        sentences = [sentence.lstrip() for sentence in sentences]
+        raw_contexts.extend(sentences)
+
+    raw_questions = ["Given the fact that the following is an excerpt from a patients doctor's note, what is the stage of cancer does the patient have?"] * len(raw_contexts)
+    with open('../celehs_llm_scripts/inference/dummy_data.jsonl', 'w') as f:
+        for idx, item in enumerate(raw_questions):
+            f.write(json.dumps({'sample_idx': idx, 'context': raw_contexts[idx], 'question': item, 'answer': 'I don\'t know.'}) + '\n')
+
+def run(
     model_path,
     model_id,
     questions,
@@ -185,11 +222,10 @@ if __name__ == "__main__":
     else:
         tp_size = 1
 
-    print(f"Output to {args.answer_file}")
     print(f"Num Questions: {len(questions)}")
     print(f"Conv Template: {get_conversation_template(args.model_id)}")
     
-    create_embeddings(
+    run(
         args.model_path,
         args.model_id,
         questions,
