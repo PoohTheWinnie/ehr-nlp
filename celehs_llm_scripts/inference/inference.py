@@ -1,14 +1,18 @@
-import argparse
-import json
 import os
+import json
 import time
 import torch
+import argparse
 import transformers
+
 import pandas as pd
+import numpy as numpy
+
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
-from fastchat.model.model_adapter import model_adapters, register_model_adapter, BaseModelAdapter
-from fastchat.conversation import conv_templates, register_conv_template, Conversation, SeparatorStyle, get_conv_template
+from fastchat.model import get_conversation_template
+from fastchat.model.model_adapter import register_model_adapter, BaseModelAdapter
+from fastchat.conversation import register_conv_template, Conversation, SeparatorStyle, get_conv_template
 
 few_shot_question_template = 'Given the contexts: {context}, please answer: {question} '
 with open('./few_shot_example.jsonl', 'r') as f:
@@ -102,10 +106,6 @@ class PretrainFewShotAdapter(BaseModelAdapter):
 register_model_adapter(EeveeAdapter)
 register_model_adapter(FewShotAdapter)
 register_model_adapter(PretrainFewShotAdapter)
-
-from fastchat.model import get_conversation_template
-import numpy as numpy
-from transformers import AutoTokenizer, AutoConfig, LlamaForCausalLM
 
 def run_eval(
     model_path,
@@ -305,7 +305,7 @@ def run_eval_extract_embeddings(
         for input in tqdm(token_ids, desc="Extracting embeddings: "):
             input = input.to(device)
             model_output = model(input, return_dict=True, output_hidden_states=True)
-            print(model_output.hidden_states[-1][0, 0, :].tolist())
+            
             if embedding_type == "Head":
                 embeddings.append(model_output.hidden_states[-1][0, 0, :].tolist())
             if embedding_type == "Average":
