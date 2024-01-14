@@ -26,10 +26,11 @@ def create_smoking_data():
     for index, row in dataframe.iterrows():
         if index == 100:
             break
-        text = row["text"]
-        sentences = re.findall(r'([^.]*?smoking[^.]*\.)', text)
-        sentences = [sentence.lstrip() for sentence in sentences]
-        raw_contexts.extend(sentences)
+        raw_contexts.append(row["text"])
+        # text = row["text"]
+        # sentences = re.findall(r'([^.]*?smoking[^.]*\.)', text)
+        # sentences = [sentence.lstrip() for sentence in sentences]
+        # raw_contexts.extend(sentences)
 
     raw_questions = ["Given the fact that the following is an excerpt from a patients doctor's note, is this patient a current smoker, past smoker, or has never smoked before?"] * len(raw_contexts)
     with open('../celehs_llm_scripts/inference/dummy_data.jsonl', 'w') as f:
