@@ -107,7 +107,7 @@ def run(
     outputs = model.generate(prompts, sampling_params)
     prompt_id_map = {prompt: idx for idx, prompt in enumerate(prompts)}
 
-    token_ids = []
+    output_token_ids = []
     for output in tqdm(outputs, desc="Generate text output: "):
         output_ids = output.outputs[0].token_ids
         question = questions[prompt_id_map[output.prompt]]
@@ -135,7 +135,7 @@ def run(
             else:
                 output = output.replace(special_token, "")
         output = output.strip()
-        token_ids.append(tokenizer(output, return_tensors="pt").input_ids)
+        output_token_ids.append(tokenizer(output, return_tensors="pt").input_ids)
 
         question['output'] = output
         question['generator'] = model_id
@@ -154,23 +154,48 @@ def run(
     model = transformers.AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
     model.to(device)
     
-    embeddings = []
+    input_embeddings = []
+    output_embeddings = []
+    
     with torch.no_grad():
-        outputs = []
-        embeddings = []
-        for input in tqdm(token_ids, desc="Extracting embeddings: "):
+        question_tokens = tokenizer(questions[0]["question"], return_tensors="pt").input_ids        
+        for i, input in tqdm(enumerate(output_token_ids), desc="Extracting embeddings: "):
             input = input.to(device)
             model_output = model(input, return_dict=True, output_hidden_states=True)
             
             if embedding_type == "Head":
-                embeddings.append(model_output.hidden_states[-1][0, 0, :].tolist())
+                output_embeddings.append(model_output.hidden_states[-1][0, 0, :].tolist())
             if embedding_type == "Average":
                 average_embedding = torch.mean(model_output.hidden_states[-1], dim=1)
                 flattened_embedding = average_embedding.view(-1)
-                embeddings.append(flattened_embedding.tolist())
-    embeddings = pd.DataFrame(embeddings)
-    embeddings = embeddings.T
-    embeddings.to_csv(os.path.dirname(answer_file) + "/embeddings.csv", sep='\t', encoding='utf-8', index=False)
+                output_embeddings.append(flattened_embedding.tolist())
+            
+            context_tokens = tokenizer(questions[0]["context"], return_tensors="pt").input_ids
+            context_tokens = context_tokens.to(device)
+            model_output = model(context_tokens, return_dict=True, output_hidden_states=True)
+            print(model_output.hidden_states[-1].size())
+            if embedding_type == "Head":
+                input_embeddings.append(model_output.hidden_states[-1][0, -len(question_tokens), :].tolist())
+            if embedding_type == "Average":
+                average_embedding = torch.mean(model_output.hidden_states[-1][0, -len(question_tokens):, :], dim=1)
+                flattened_embedding = average_embedding.view(-1)
+                input_embeddings.append(flattened_embedding.tolist())
+
+        question_tokens = question_tokens.to(device)
+        model_output = model(question_tokens, return_dict=True, output_hidden_states=True)
+        
+        if embedding_type == "Head":
+            input_embeddings.append(model_output.hidden_states[-1][0, 0, :].tolist())
+        if embedding_type == "Average":
+            average_embedding = torch.mean(model_output.hidden_states[-1], dim=1)
+            flattened_embedding = average_embedding.view(-1)
+            input_embeddings.append(flattened_embedding.tolist())
+        
+    input_embeddings = pd.DataFrame(input_embeddings).T
+    input_embeddings.to_csv(os.path.dirname(answer_file) + "/input_embeddings.csv", sep='\t', encoding='utf-8', index=False)
+
+    output_embeddings = pd.DataFrame(output_embeddings).T
+    output_embeddings.to_csv(os.path.dirname(answer_file) + "/output_embeddings.csv", sep='\t', encoding='utf-8', index=False)
     
     # ====== Runtime ======    
     end_time = time.time()
