@@ -171,10 +171,12 @@ def run(
                 flattened_embedding = average_embedding.view(-1)
                 output_embeddings.append(flattened_embedding.tolist())
             
-            context_tokens = tokenizer(questions[i]["context"], return_tensors="pt").input_ids
+            context_tokens = tokenizer(questions[i]["output"], return_tensors="pt").input_ids
             context_tokens = context_tokens.to(device)
             model_output = model(context_tokens, return_dict=True, output_hidden_states=True)
+
             print(model_output.hidden_states[-1].size())
+            
             if embedding_type == "Head":
                 input_embeddings.append(model_output.hidden_states[-1][0, -len(question_tokens), :].tolist())
             if embedding_type == "Average":
