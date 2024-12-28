@@ -1,7 +1,4 @@
 
-# LLaMA 2 Inference with Custom Dataset
-
-This project enables inference using Meta's LLaMA 2 model on custom datasets, such as medical notes or doctor's reports. It utilizes the Hugging Face `transformers` library for model loading and tokenization, as well as PyTorch for computation. The project also includes utilities for extracting embeddings from model outputs.
 
 ## Table of Contents
 
@@ -39,6 +36,18 @@ This project enables inference using Meta's LLaMA 2 model on custom datasets, su
    pip install -r requirements.txt
    ```
 
+## O2 Guide
+
+Model Paths:
+- /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/Llama-2-13b-chat-hf
+- /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/Llama-2-13b-hf
+- /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/Llama-2-7b-chat-hf
+- /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/Llama-2-7b-hf
+- /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/vicuna-13b-v1.5
+- /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/vicuna-7b-v1.5
+- /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/WizardLM-13B-V1.2
+- /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/GENIE_en_8b
+
 ## Downloading LLaMA 2 Model Weights
 
 Once you have access, follow these steps to download the LLaMA 2 model:
@@ -62,7 +71,7 @@ Once you have access, follow these steps to download the LLaMA 2 model:
 
 ## Running the Script
 
-To execute the main script with LLaMA 2, use the following command:
+Example to execute the main script with LLaMA 2, use the following command:
 ```bash
 python main.py --model-path "models/Llama-2-7b-hf" --model-id "llama2" --data-file data/mimic_smoking.csv --dataset smoking --output-dir ./outputs
 ```
@@ -75,13 +84,6 @@ python main.py --model-path "models/Llama-2-7b-hf" --model-id "llama2" --data-fi
 - `--dataset`: Dataset type, choose between `smoking` or `cancer`.
 - `--output-dir`: Directory where outputs and embeddings will be saved.
 
-### Example
-
-To run the script on a dataset located at `data/mimic_smoking.csv`:
-```bash
-python main.py --model-path "models/llama-2-7b" --model-id "llama2" --data-file data/mimic_smoking.csv --dataset smoking --output-dir ./outputs
-```
-
 ## Usage
 
 This script will:
@@ -93,9 +95,10 @@ This script will:
 
 The project directory is structured as follows:
 ```
-your-repo-name/
+ehr-nlp/
 ├── main.py                # Main script for running inference
 ├── templates.py           # Prompt engineering templates
+├── genie.py               # GENIE pipeline code
 ├── datasets.py            # Two main datasets
 ├── requirements.txt       # Dependencies file
 ├── README.md              # Project documentation
