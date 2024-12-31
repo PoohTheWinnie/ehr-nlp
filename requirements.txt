@@ -5,3 +5,9 @@ tqdm
 fastchat
 accelerate
 black
+datasets
+sentencepiece
+openai
+wandb
+ray
+vllm==0.2.1

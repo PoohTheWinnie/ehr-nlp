@@ -48,6 +48,9 @@ Model Paths:
 - /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/WizardLM-13B-V1.2
 - /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/GENIE_en_8b
 
+GPU Instances Info:
+- [O2 GPU Resources](https://harvardmed.atlassian.net/wiki/spaces/O2/pages/1629290761/Using+O2+GPU+resources)
+
 ## Downloading LLaMA 2 Model Weights
 
 Once you have access, follow these steps to download the LLaMA 2 model:
