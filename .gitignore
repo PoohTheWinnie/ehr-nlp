@@ -3,3 +3,8 @@ llm_setup/Anaconda3-2023.09-0-Linux-x86_64.sh
 llm_setup/Anaconda3-2023.09-0-Linux-x86_64.sh.1
 models/
 llama_env/
+
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+*.py[cod]
