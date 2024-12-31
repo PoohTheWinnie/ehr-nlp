@@ -1,35 +1,42 @@
-import os
-import json
-import time
-import torch
 import argparse
-import transformers
+import json
+import os
+import time
 
-import pandas as pd
 import numpy as numpy
-
+import pandas as pd
+import torch
+import transformers
+from fastchat.conversation import (
+    Conversation,
+    SeparatorStyle,
+    get_conv_template,
+    register_conv_template,
+)
+from fastchat.model import get_conversation_template
+from fastchat.model.model_adapter import BaseModelAdapter, register_model_adapter
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
-from fastchat.model import get_conversation_template
-from fastchat.model.model_adapter import register_model_adapter, BaseModelAdapter
-from fastchat.conversation import register_conv_template, Conversation, SeparatorStyle, get_conv_template
-
 
 if __name__ == "__main__":
     template_all = [
-        'Please provide your response based on the information in the electronic health record:\n {question} \nThe information in the electronic health record is as follows:\n {note}',
-        'To answer the following question, please refer to the electronic health record: \n{note}\n\nThe question is as follows:\n{question}',
-        'Please respond to the following question based on the electronic health record entry provided:\n\nElectronic Health Record:\n{note}\n\nQuestion:\n{question}',
-        'Based on the information stored in the electronic health record, could you kindly provide a response to the following inquiry:\n{question}\nThe relevant notes are as follows:\n{note}',
-        'To address the following question, please refer to the electronic health record:\n{note}\n\nQuestion:\n {question}',
-        'Please provide a response to the following question based on the information presented in the electronic health record:\n\n{question}\n\nThe relevant information is provided in the following note: \n\n{note}\n',
-        'Given the electronic health record:\n {note} \n\nPlease answer this question accordingly:\n {question}'
+        "Please provide your response based on the information in the electronic health record:\n {question} \nThe information in the electronic health record is as follows:\n {note}",
+        "To answer the following question, please refer to the electronic health record: \n{note}\n\nThe question is as follows:\n{question}",
+        "Please respond to the following question based on the electronic health record entry provided:\n\nElectronic Health Record:\n{note}\n\nQuestion:\n{question}",
+        "Based on the information stored in the electronic health record, could you kindly provide a response to the following inquiry:\n{question}\nThe relevant notes are as follows:\n{note}",
+        "To address the following question, please refer to the electronic health record:\n{note}\n\nQuestion:\n {question}",
+        "Please provide a response to the following question based on the information presented in the electronic health record:\n\n{question}\n\nThe relevant information is provided in the following note: \n\n{note}\n",
+        "Given the electronic health record:\n {note} \n\nPlease answer this question accordingly:\n {question}",
     ]
-    model_path = "/n/data1/hsph/biostat/celehs/lab/hongyi/ehrllm/0212-llama27b-ehrqa-1epoch"
+    model_path = (
+        "/n/data1/hsph/biostat/celehs/lab/hongyi/ehrllm/0212-llama27b-ehrqa-1epoch"
+    )
     # Load the tokenizer and model
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(model_path)
-    model = transformers.AutoModelForCausalLM.from_pretrained(model_path, device_map='auto')
+    model = transformers.AutoModelForCausalLM.from_pretrained(
+        model_path, device_map="auto"
+    )
 
     note = """
     SICU Nsg ADmit Note
@@ -64,17 +71,19 @@ A/P- con't to offer supportive care as ordered, pulmonary toilet as tolerated.
 
 Endo- blood sugar 150 on decadron,
     """
-    question = "Is this patient a current smoker, past smoker, or has never smoked before?"
-    input_texts = f'Given the electronic health record:\n {note} \n\nPlease answer this question accordingly:\n {question}'
+    question = (
+        "Is this patient a current smoker, past smoker, or has never smoked before?"
+    )
+    input_texts = f"Given the electronic health record:\n {note} \n\nPlease answer this question accordingly:\n {question}"
 
-    device = torch.device('cuda')
+    device = torch.device("cuda")
     model.to(device)
 
     input_ids = tokenizer(input_texts, return_tensors="pt").input_ids
     input_ids = input_ids.to(device)
     with torch.no_grad():
-        outputs = model(input_ids, return_dict = True, output_hidden_states = True)
-        
+        outputs = model(input_ids, return_dict=True, output_hidden_states=True)
+
     print(outputs)
     predicted_token_ids = outputs.logits.argmax(-1)
     output_text = tokenizer.decode(predicted_token_ids[0], skip_special_tokens=True)
@@ -88,5 +97,3 @@ Endo- blood sugar 150 on decadron,
     # answer = tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(inputs["input_ids"][0][answer_start:answer_end]))
 
     # print("Answer:", answer)
-
-

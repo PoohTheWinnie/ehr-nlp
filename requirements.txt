@@ -10,4 +10,8 @@ sentencepiece
 openai
 wandb
 ray
+isort
 vllm==0.2.1
+peft==0.4.0 
+bitsandbytes==0.40.2 
+trl==0.4.7

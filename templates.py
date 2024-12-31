@@ -1,12 +1,12 @@
 import json
 
-from fastchat.model.model_adapter import BaseModelAdapter
 from fastchat.conversation import (
-    register_conv_template,
     Conversation,
     SeparatorStyle,
     get_conv_template,
+    register_conv_template,
 )
+from fastchat.model.model_adapter import BaseModelAdapter
 
 few_shot_question_template = "Given the contexts: {context}, please answer: {question} "
 

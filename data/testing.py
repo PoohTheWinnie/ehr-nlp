@@ -1,6 +1,7 @@
-import pandas as pd
-import re
 import json
+import re
+
+import pandas as pd
 
 file = "../local/mimic_smoking.csv"
 dataframe = pd.read_csv(file)

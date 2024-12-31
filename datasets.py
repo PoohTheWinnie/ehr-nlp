@@ -37,5 +37,3 @@ class CancerData(Dataset):
 
     def __getitem__(self, idx):
         return {"context": self.contexts[idx], "question": self.questions[idx]}
-
-
