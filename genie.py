@@ -4,10 +4,11 @@ import pandas as pd
 from vllm import LLM, SamplingParams
 
 
+
 def process_ehr_data(
     model_path="THUMedInfo/GENIE_en_8b",
-    data_path="ehr-nlp/data/mimic_smoking.csv",
-    n_samples=10,
+    data_path="data/mimic_smoking.csv",
+    n_samples=2,
     temperature=0.7,
     max_new_token=512,
     tensor_parallel_size=1,
@@ -44,11 +45,13 @@ def process_ehr_data(
     # Process responses
     responses = []
     for output in outputs:
+        print(output.outputs[0].text)
         try:
             response = json.loads(output.outputs[0].text)
             responses.append(response)
         except json.JSONDecodeError:
-            print(f"Failed to parse JSON from output: {output.outputs[0].text}")
+            pass
+            # print(f"Failed to parse JSON from output: {output.outputs[0].text}")
 
     return responses
 
@@ -56,3 +59,6 @@ def process_ehr_data(
 if __name__ == "__main__":
     responses = process_ehr_data()
     print(responses)
+    # res = json.loads(output[0])
+
+

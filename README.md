@@ -2,18 +2,12 @@
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
 - [Setup](#setup)
 - [Downloading LLaMA 2 Model Weights](#downloading-llama-2-model-weights)
 - [Running the Script](#running-the-script)
 - [Arguments](#arguments)
 - [Usage](#usage)
 - [File Structure](#file-structure)
-
-## Prerequisites
-
-- **Python 3.8+**: Ensure you have Python installed.
-- **Hugging Face Access**: You will need access to the LLaMA 2 model on Hugging Face. Visit Meta’s [LLaMA 2 page](https://ai.meta.com/llama/) and request access to download the model weights.
 
 ## Setup
 

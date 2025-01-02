@@ -7,9 +7,35 @@ REQUIREMENTS = requirements.txt
 # Define the path to the source code directory
 SRC_DIR = .
 
-# Default target
-.PHONY: setup install format
-all: setup install format
+# Default values for GPU parameters
+GPU_TYPE ?= a100
+MEM ?= 32
+TIME ?= 1:15:00
+PARTITION ?= gpu
+
+# List all GPU sessions
+.PHONY: gpu-info
+gpu-info:
+	sinfo  --Format=nodehost,available,memory,statelong,gres:40 -p gpu,gpu_quad,gpu_requeue
+
+# List all GPU sessions
+.PHONY: gpu-sessions
+gpu-sessions:
+	squeue -u wic029
+
+# GPU session command
+.PHONY: start-gpu
+start-gpu:
+	@echo "Starting GPU session with:"
+	@echo "  GPU Type: $(GPU_TYPE)"
+	@echo "  Memory: $(MEM)G"
+	@echo "  Time: $(TIME)"
+	@echo "  Partition: $(PARTITION)"
+	srun -n 1 --pty -t $(TIME) --mem $(MEM)G -p $(PARTITION) --gres=gpu:1 -w $(GPU_TYPE) bash
+
+.PHONY: cancel-gpu
+cancel-gpu:
+	scontrol update UserName=wic029 AccountName=wic029
 
 # Setup and activate conda environment
 .PHONY: setup
@@ -46,6 +72,17 @@ install:
 	pip install -U FlagEmbedding
 	pip install black isort
 
+# Default CUDA version
+CUDA_VERSION ?= 124
+
+# Install PyTorch with specific CUDA version
+.PHONY: install-torch
+install-torch:
+	@echo "Installing PyTorch with CUDA $(CUDA_VERSION)"
+	pip3 uninstall torch torchvision torchaudio -y
+	pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu$(CUDA_VERSION)
+
+
 # Format code with isort and black
 .PHONY: format
 format:
@@ -62,11 +99,25 @@ clean:
 	@echo "Environment cleaned up!"
 
 # Help target to display available commands
-.PHONY: help
 help:
-	@echo "Makefile commands:"
-	@echo "  make setup   - Create conda environment"
-	@echo "  make install - Install packages (run after activating environment)"
-	@echo "  make format  - Format code with isort and black"
-	@echo "  make clean   - Remove the conda environment"
-	@echo "  make all     - Same as make setup"
+	@echo "╔════════════════════════════════════════════════════════════════════════════╗"
+	@echo "║                           Makefile Commands                                ║"
+	@echo "╚════════════════════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "Development Setup:"
+	@echo "  make setup         - Create conda environment"
+	@echo "  make install-torch - Install PyTorch with CUDA version"
+	@echo "  make install       - Install packages (requires activated environment)"
+	@echo "  make clean         - Remove the conda environment"
+	@echo
+	@echo "GPU Management:"
+	@echo "  make gpu-info      - List all GPU sessions"
+	@echo "  make gpu-sessions  - List all GPU sessions"
+	@echo "  make start-gpu     - Start a GPU session"
+	@echo "  make cancel-gpu    - Cancel a GPU session"
+	@echo
+	@echo "Code Quality:"
+	@echo "  make format        - Format code with isort and black"
+	@echo
+	@echo "Other:"
+	@echo "  make all          - Same as make setup"
