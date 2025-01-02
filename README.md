@@ -4,31 +4,59 @@
 
 - [Setup](#setup)
 - [Downloading LLaMA 2 Model Weights](#downloading-llama-2-model-weights)
-- [Running the Script](#running-the-script)
-- [Arguments](#arguments)
-- [Usage](#usage)
+- [O2 Guide](#o2-guide)
+- [Running the Embedding Extraction Script](#running-the-embedding-extraction-script)
 - [File Structure](#file-structure)
 
 ## Setup
 
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/your-username/your-repo-name.git
-   cd your-repo-name
-   ```
+### Environment Setup
+```bash
+make setup   # Create/activate conda environment and install dependencies
+make install # Install all packages (including PyTorch with default CUDA)
+make clean   # Remove the conda environment
+```
 
-2. **Create and Activate a Virtual Environment**:
-   Create a virtual environment to manage dependencies.
-   ```bash
-   python3 -m venv llama_env
-   source llama_env/bin/activate  # On MacOS/Linux
-   ```
+### PyTorch Installation
+```bash
+make install-torch                  # Install PyTorch with default CUDA (11.7)
+make install-torch CUDA_VERSION=112 # Install PyTorch with CUDA 11.2
+make install-torch CUDA_VERSION=116 # Install PyTorch with CUDA 11.6
+make install-torch CUDA_VERSION=117 # Install PyTorch with CUDA 11.7
+make install-torch CUDA_VERSION=118 # Install PyTorch with CUDA 11.8
+```
 
-3. **Install Dependencies**:
-   Install the required Python libraries.
+### GPU Session Management
+```bash
+make gpu                     # Start GPU session with defaults (A100, 32GB, 1:15:00)
+make gpu GPU_TYPE=v100      # Start with specific GPU type (a100, v100)
+make gpu MEM=64             # Start with specific memory in GB
+make gpu TIME=2:00:00       # Start with specific time limit
+make gpu PARTITION=gpu_test # Start with specific partition
+```
+
+### Code Formatting
+```bash
+make format  # Format code with isort and black
+```
+
+### Examples
+```bash
+# Request A100 GPU with 40GB RAM for 2 hours
+make gpu GPU_TYPE=a100 MEM=40 TIME=2:00:00
+
+# Install all packages with CUDA 11.2
+make install CUDA_VERSION=112
+```
+
+### Important Notes
+1. After running `make setup`, activate the environment with:
    ```bash
-   pip install -r requirements.txt
+   source $(conda info --base)/etc/profile.d/conda.sh && conda activate inference
    ```
+2. Check your CUDA version with `nvidia-smi` before installing PyTorch
+3. Use `module load cuda/<version>` to load specific CUDA version
+
 
 ## O2 Guide
 
@@ -66,7 +94,7 @@ Once you have access, follow these steps to download the LLaMA 2 model:
    git clone https://huggingface.co/meta-llama/Llama-2-7b-hf
    ```
 
-## Running the Script
+## Running the Embedding Extraction Script
 
 Example to execute the main script with LLaMA 2, use the following command:
 ```bash
@@ -81,7 +109,7 @@ python main.py --model-path "models/Llama-2-7b-hf" --model-id "llama2" --data-fi
 - `--dataset`: Dataset type, choose between `smoking` or `cancer`.
 - `--output-dir`: Directory where outputs and embeddings will be saved.
 
-## Usage
+### Usage
 
 This script will:
 1. Process the input data by generating prompts based on the dataset type.
@@ -98,7 +126,9 @@ ehr-nlp/
 ├── genie.py               # GENIE pipeline code
 ├── datasets.py            # Two main datasets
 ├── requirements.txt       # Dependencies file
+├── makefile               # Make file utility commands
 ├── README.md              # Project documentation
 ├── data/                  # Directory to store datasets
-└── models/                # Directory to store models locally
+├── models/                # Directory to store models locally
+└── study/                 # Directory for testing and studying models
 ```
