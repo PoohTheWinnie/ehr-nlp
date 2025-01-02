@@ -8,10 +8,14 @@ REQUIREMENTS = requirements.txt
 SRC_DIR = .
 
 # Default values for GPU parameters
-GPU_TYPE ?= a100
+GPU ?= a100
 MEM ?= 32
-TIME ?= 1:15:00
 PARTITION ?= gpu
+TIME ?= 1:15:00
+JOBID ?= 1092830
+
+# User name
+USER ?= wic029
 
 # List all GPU sessions
 .PHONY: gpu-info
@@ -21,21 +25,20 @@ gpu-info:
 # List all GPU sessions
 .PHONY: gpu-sessions
 gpu-sessions:
-	squeue -u wic029
+	squeue -u $(USER)
 
 # GPU session command
 .PHONY: start-gpu
 start-gpu:
 	@echo "Starting GPU session with:"
-	@echo "  GPU Type: $(GPU_TYPE)"
+	@echo "  GPU Type: $(GPU)"
 	@echo "  Memory: $(MEM)G"
 	@echo "  Time: $(TIME)"
-	@echo "  Partition: $(PARTITION)"
-	srun -n 1 --pty -t $(TIME) --mem $(MEM)G -p $(PARTITION) --gres=gpu:1 -w $(GPU_TYPE) bash
+	srun -n 1 --pty -t $(TIME) --mem $(MEM)G -p $(PARTITION) --gres=gpu:1 -w $(GPU) bash
 
 .PHONY: cancel-gpu
 cancel-gpu:
-	scontrol update UserName=wic029 AccountName=wic029
+	scancel $(JOBID)
 
 # Setup and activate conda environment
 .PHONY: setup

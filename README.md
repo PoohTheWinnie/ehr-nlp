@@ -14,7 +14,6 @@
 ```bash
 make setup   # Create/activate conda environment and install dependencies
 make install # Install all packages (including PyTorch with default CUDA)
-make clean   # Remove the conda environment
 ```
 
 ### PyTorch Installation
@@ -29,10 +28,9 @@ make install-torch CUDA_VERSION=118 # Install PyTorch with CUDA 11.8
 ### GPU Session Management
 ```bash
 make gpu                     # Start GPU session with defaults (A100, 32GB, 1:15:00)
-make gpu GPU_TYPE=v100      # Start with specific GPU type (a100, v100)
-make gpu MEM=64             # Start with specific memory in GB
-make gpu TIME=2:00:00       # Start with specific time limit
-make gpu PARTITION=gpu_test # Start with specific partition
+make gpu GPU=v100            # Start with specific GPU type (a100, v100)
+make gpu MEM=64              # Start with specific memory in GB
+make gpu TIME=2:00:00        # Start with specific time limit
 ```
 
 ### Code Formatting
@@ -43,7 +41,7 @@ make format  # Format code with isort and black
 ### Examples
 ```bash
 # Request A100 GPU with 40GB RAM for 2 hours
-make gpu GPU_TYPE=a100 MEM=40 TIME=2:00:00
+make gpu GPU=compute-gc-17-246 MEM=40 TIME=2:00:00
 
 # Install all packages with CUDA 11.2
 make install CUDA_VERSION=112
@@ -68,7 +66,7 @@ Model Paths:
 - /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/vicuna-13b-v1.5
 - /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/vicuna-7b-v1.5
 - /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/WizardLM-13B-V1.2
-- /n/data1/hsph/biostat/celehs/LLM_MODELS/Models/GENIE_en_8b
+- /n/data1/hsph/biostat/celehs/lab/hongyi/ehrllm/THUMedInfo/GENIE_en_8b
 
 GPU Instances Info:
 - [O2 GPU Resources](https://harvardmed.atlassian.net/wiki/spaces/O2/pages/1629290761/Using+O2+GPU+resources)
@@ -121,14 +119,14 @@ This script will:
 The project directory is structured as follows:
 ```
 ehr-nlp/
-├── main.py                # Main script for running inference
-├── templates.py           # Prompt engineering templates
-├── genie.py               # GENIE pipeline code
-├── datasets.py            # Two main datasets
-├── requirements.txt       # Dependencies file
-├── makefile               # Make file utility commands
-├── README.md              # Project documentation
-├── data/                  # Directory to store datasets
-├── models/                # Directory to store models locally
-└── study/                 # Directory for testing and studying models
+├── embedding_extraction.py                # Main script for running inference
+├── templates.py                           # Prompt engineering templates
+├── genie.py                               # GENIE pipeline code
+├── datasets.py                            # Two main datasets
+├── requirements.txt                       # Dependencies file
+├── makefile                               # Make file utility commands
+├── README.md                              # Project documentation
+├── data/                                  # Directory to store datasets
+├── models/                                # Directory to store models locally
+└── study/                                 # Directory for testing and studying models
 ```
