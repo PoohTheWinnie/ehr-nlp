@@ -1,8 +1,0 @@
-vllm==0.2.1
-transformers
-datasets
-accelerate
-sentencepiece
-openai
-wandb
-ray
