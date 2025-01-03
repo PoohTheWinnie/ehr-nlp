@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from datasets import CancerData, SmokingData
+from custom_datasets import CancerData, SmokingData
 from templates import (
     EeveeAdapter,
     FewShotAdapter,

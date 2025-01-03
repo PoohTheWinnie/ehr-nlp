@@ -23,13 +23,12 @@ if torch.cuda.is_available():
 
 
 model_path = "/n/data1/hsph/biostat/celehs/LLM_MODELS/Models"
-data_path = "/home/wic029/ehr-nlp"
 
 # The model that you want to train from the Hugging Face hub
 model_name = f"{model_path}/Llama-2-7b-chat-hf"
 
 # The instruction dataset to use
-dataset_name = f"{data_path}/guanaco-llama2-1k"
+dataset_name = "mlabonne/guanaco-llama2-1k"
 
 # Fine-tuned model name
 new_model = "Llama-2-7b-chat-finetune"
