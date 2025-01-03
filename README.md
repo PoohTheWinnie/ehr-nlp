@@ -119,6 +119,7 @@ This script will:
 The project directory is structured as follows:
 ```
 ehr-nlp/
+├── data/                                  # Directory to store datasets
 ├── embedding_extraction.py                # Main script for running inference
 ├── templates.py                           # Prompt engineering templates
 ├── genie.py                               # GENIE pipeline code
@@ -126,7 +127,10 @@ ehr-nlp/
 ├── requirements.txt                       # Dependencies file
 ├── makefile                               # Make file utility commands
 ├── README.md                              # Project documentation
-├── data/                                  # Directory to store datasets
-├── models/                                # Directory to store models locally
-└── study/                                 # Directory for testing and studying models
 ```
+
+
+map entities to CUI
+
+100 concepts im interested in
+make a text file for it
