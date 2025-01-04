@@ -128,9 +128,3 @@ ehr-nlp/
 ├── makefile                               # Make file utility commands
 ├── README.md                              # Project documentation
 ```
-
-
-map entities to CUI
-
-100 concepts im interested in
-make a text file for it
