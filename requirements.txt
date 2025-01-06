@@ -12,6 +12,7 @@ wandb
 ray
 isort
 vllm
+python-dotenv
 peft==0.4.0 
 bitsandbytes==0.40.2 
 trl==0.4.7

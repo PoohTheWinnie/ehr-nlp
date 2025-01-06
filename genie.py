@@ -1,11 +1,18 @@
 import json
 import requests
+import os
+from dotenv import load_dotenv
 
 import pandas as pd
-from vllm import LLM, SamplingParams
-from pyauth import Authentication
+# from vllm import LLM, SamplingParams
 
-api_key = ""
+# Load environment variables from .env file
+load_dotenv()
+
+# Get API key from environment variables
+api_key = os.getenv('UMLS_API_KEY')
+if not api_key:
+    raise ValueError("UMLS_API_KEY not found in environment variables. Please check your .env file.")
 
 def process_ehr_data(
     model_path="/n/data1/hsph/biostat/celehs/lab/hongyi/ehrllm/THUMedInfo/GENIE_en_8b",
@@ -53,35 +60,39 @@ def process_ehr_data(
 
     return responses
 
-def post_process_entities(entities):
+def post_process_entities(entities, cui_list):
     """
     Post-process extracted entities from the model output.
 
-    Example list of entities:
-    [
+    Example input:
+    entities = [
         {'phrase': 'allergies', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'title', 'body_location': 'null', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
         {'phrase': 'sulfur', 'semantic_type': 'Chemical or Drug', 'assertion_status': 'present', 'body_location': 'not applicable', 'modifier': 'not applicable', 'value': 'null', 'unit': 'units: null', 'purpose': 'null'}, 
         {'phrase': 'norvasc', 'semantic_type': 'Chemical or Drug', 'assertion_status': 'present', 'body_location': 'not applicable', 'modifier': 'not applicable', 'value': 'null', 'unit': 'units: null', 'purpose': 'null'}, 
         {'phrase': 'abdominal pain', 'semantic_type': 'Sign, Symptom, or Finding', 'assertion_status': 'present', 'body_location': 'Abdominal', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
-        {'phrase': 'surgical or invasive procedure', 'semantic_type': 'Therapeutic or Preventive Procedure', 'assertion_status': 'title', 'body_location': 'null', 'modifier': 'not applicable', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'null'}
+        {'phrase': 'surgical or invasive procedure', 'semantic_type': 'Therapeutic or Preventive Procedure', 'assertion_status': 'title', 'body_location': 'null', 'modifier': 'not applicable', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'null'},
+        {'phrase': 'renovascular hypertension', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'present', 'body_location': 'renal', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
+        {'phrase': 'non-st elevation myocardial infarction', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'present', 'body_location': 'null', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}
     ]
+
+    cui_list = ["C0000737", "C0020545"]
 
     Args:
         entities (list): List of entity dictionaries extracted from model responses
+        cui_list (list): List of CUIs (string) for the concepts to filter by
 
     Returns:
         list: List of processed entity dictionaries with standardized formatting
     """
-    processed_entities = []
+    # Convert cui_list to set for O(1) lookups
+    cui_set = set(cui_list)
     
-    for entity in entities:
-        # Get CUI from UMLS API for the phrase
-        cui = get_cui_from_umls(entity['phrase'])
-        
-        # Add CUI to entity dictionary if found
-        entity['cui'] = cui if cui else 'null'
-            
-        processed_entities.append(entity)
+    # Use list comprehension for better performance
+    processed_entities = [
+        {**entity, 'cui': cui} 
+        for entity in entities
+        if (cui := get_cui_from_umls(entity['phrase'])) in cui_set
+    ]
     
     return processed_entities
 
@@ -96,11 +107,6 @@ def get_cui_from_umls(term):
     Returns:
         str: CUI code if found, None otherwise
     """
-    # Get authentication token using pyauth helper
-    auth_client = Authentication(api_key)
-    tgt = auth_client.gettgt()
-    service_ticket = auth_client.getst(tgt)
-    
     # UMLS API endpoint
     base_url = 'https://uts-ws.nlm.nih.gov/rest'
     version = 'current'
@@ -109,9 +115,7 @@ def get_cui_from_umls(term):
     # Parameters for the search
     params = {
         'string': term,
-        'ticket': service_ticket,
-        'searchType': 'exact',
-        'returnIdType': 'CUI',
+        'apiKey': api_key,
         'pageSize': 1  # We only need the first/best match
     }
     
@@ -138,8 +142,46 @@ def get_cui_from_umls(term):
         return None
 
 if __name__ == "__main__":
-    responses = process_ehr_data()
-    print(responses)
+    # Example usage of process_ehr_data() and get_cui_from_umls()
+    
+    # Example 1: Get CUI code for a medical term
+    example_term = "abdominal pain"
+    cui_code = get_cui_from_umls(example_term)
+    print(f"\nExample 1: Getting CUI code")
+    print(f"Term: {example_term}")
+    print(f"CUI Code: {cui_code}")
+
+    # Example 2: Process some sample EHR data
+    # sample_ehr_text = """
+    # Patient presents with fever and cough for 3 days. 
+    # Medical History: Type 2 Diabetes, Hypertension
+    # Medications: Metformin 500mg BID, Lisinopril 10mg daily
+    # """
+    # print("\nExample 2: Processing EHR text")
+    # print("Input text:")
+    # print(sample_ehr_text)
+    # print("\nProcessed entities:")
+    # responses = process_ehr_data()
+    # print(responses)
+
+    # Example 3: Post processing function
+
+    entities = [
+        {'phrase': 'allergies', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'title', 'body_location': 'null', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
+        {'phrase': 'sulfur', 'semantic_type': 'Chemical or Drug', 'assertion_status': 'present', 'body_location': 'not applicable', 'modifier': 'not applicable', 'value': 'null', 'unit': 'units: null', 'purpose': 'null'}, 
+        {'phrase': 'norvasc', 'semantic_type': 'Chemical or Drug', 'assertion_status': 'present', 'body_location': 'not applicable', 'modifier': 'not applicable', 'value': 'null', 'unit': 'units: null', 'purpose': 'null'}, 
+        {'phrase': 'abdominal pain', 'semantic_type': 'Sign, Symptom, or Finding', 'assertion_status': 'present', 'body_location': 'Abdominal', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
+        {'phrase': 'surgical or invasive procedure', 'semantic_type': 'Therapeutic or Preventive Procedure', 'assertion_status': 'title', 'body_location': 'null', 'modifier': 'not applicable', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'null'},
+        {'phrase': 'renovascular hypertension', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'present', 'body_location': 'renal', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
+        {'phrase': 'non-st elevation myocardial infarction', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'present', 'body_location': 'null', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}
+    ]
+
+    cui_list = ["C0000737", "C0020545"]
+    print(post_process_entities(entities, cui_list))
+    
+
+    
+
     # res = json.loads(output[0])
 
 
