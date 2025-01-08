@@ -1,10 +1,11 @@
+import time
 import json
 import requests
 import os
 from dotenv import load_dotenv
 
 import pandas as pd
-# from vllm import LLM, SamplingParams
+from vllm import LLM, SamplingParams
 
 # Load environment variables from .env file
 load_dotenv()
@@ -60,39 +61,44 @@ def process_ehr_data(
 
     return responses
 
-def post_process_entities(entities, cui_list):
+def post_process_entities(entities, cui_dictionary_file, cui_column="cui", term_column="term"):
     """
-    Post-process extracted entities from the model output.
-
-    Example input:
-    entities = [
-        {'phrase': 'allergies', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'title', 'body_location': 'null', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
-        {'phrase': 'sulfur', 'semantic_type': 'Chemical or Drug', 'assertion_status': 'present', 'body_location': 'not applicable', 'modifier': 'not applicable', 'value': 'null', 'unit': 'units: null', 'purpose': 'null'}, 
-        {'phrase': 'norvasc', 'semantic_type': 'Chemical or Drug', 'assertion_status': 'present', 'body_location': 'not applicable', 'modifier': 'not applicable', 'value': 'null', 'unit': 'units: null', 'purpose': 'null'}, 
-        {'phrase': 'abdominal pain', 'semantic_type': 'Sign, Symptom, or Finding', 'assertion_status': 'present', 'body_location': 'Abdominal', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
-        {'phrase': 'surgical or invasive procedure', 'semantic_type': 'Therapeutic or Preventive Procedure', 'assertion_status': 'title', 'body_location': 'null', 'modifier': 'not applicable', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'null'},
-        {'phrase': 'renovascular hypertension', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'present', 'body_location': 'renal', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
-        {'phrase': 'non-st elevation myocardial infarction', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'present', 'body_location': 'null', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}
-    ]
-
-    cui_list = ["C0000737", "C0020545"]
+    Post-process extracted entities from the model output using a CSV dictionary file.
 
     Args:
         entities (list): List of entity dictionaries extracted from model responses
-        cui_list (list): List of CUIs (string) for the concepts to filter by
+        cui_dictionary_file (str): Path to CSV file containing CUI mappings
+        cui_column (str): Name of the column containing CUI codes in the CSV
+        term_column (str): Name of the column containing terms in the CSV
 
     Returns:
         list: List of processed entity dictionaries with standardized formatting
     """
-    # Convert cui_list to set for O(1) lookups
-    cui_set = set(cui_list)
+    start_time = time.time()
     
-    # Use list comprehension for better performance
+    # Read only necessary columns from CSV
+    cui_df = pd.read_csv(cui_dictionary_file, usecols=[cui_column, term_column])
+    
+    # Create term_to_cui mapping once
+    term_to_cui = dict(zip(cui_df[term_column].str.lower(), cui_df[cui_column]))
+    
+    # Pre-extract all phrases for faster lookup
+    entity_phrases = {entity['phrase'].lower() for entity in entities}
+    
+    # Create a filtered mapping for only relevant terms
+    relevant_terms = term_to_cui.keys() & entity_phrases
+    filtered_term_to_cui = {term: term_to_cui[term] for term in relevant_terms}
+    
+    # Process entities using list comprehension
     processed_entities = [
-        {**entity, 'cui': cui} 
+        {**entity, 'cui': filtered_term_to_cui[entity['phrase'].lower()]}
         for entity in entities
-        if (cui := get_cui_from_umls(entity['phrase'])) in cui_set
+        if entity['phrase'].lower() in filtered_term_to_cui
     ]
+    
+    end_time = time.time()
+    print(f"Post-processing took {end_time - start_time:.2f} seconds for {len(entities)} entities")
+    print(f"Matched {len(processed_entities)} entities with CUIs")
     
     return processed_entities
 
@@ -145,11 +151,11 @@ if __name__ == "__main__":
     # Example usage of process_ehr_data() and get_cui_from_umls()
     
     # Example 1: Get CUI code for a medical term
-    example_term = "abdominal pain"
-    cui_code = get_cui_from_umls(example_term)
-    print(f"\nExample 1: Getting CUI code")
-    print(f"Term: {example_term}")
-    print(f"CUI Code: {cui_code}")
+    # example_term = "abdominal pain"
+    # cui_code = get_cui_from_umls(example_term)
+    # print(f"\nExample 1: Getting CUI code")
+    # print(f"Term: {example_term}")
+    # print(f"CUI Code: {cui_code}")
 
     # Example 2: Process some sample EHR data
     # sample_ehr_text = """
@@ -176,8 +182,7 @@ if __name__ == "__main__":
         {'phrase': 'non-st elevation myocardial infarction', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'present', 'body_location': 'null', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}
     ]
 
-    cui_list = ["C0000737", "C0020545"]
-    print(post_process_entities(entities, cui_list))
+    post_process_entities(entities * 143000, cui_dictionary_file="data/cui_dictionary.csv")
     
 
     
