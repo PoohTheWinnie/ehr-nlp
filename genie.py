@@ -1,19 +1,22 @@
-import time
 import json
-import requests
 import os
-from dotenv import load_dotenv
+import time
 
 import pandas as pd
+import requests
+from dotenv import load_dotenv
 from vllm import LLM, SamplingParams
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Get API key from environment variables
-api_key = os.getenv('UMLS_API_KEY')
+api_key = os.getenv("UMLS_API_KEY")
 if not api_key:
-    raise ValueError("UMLS_API_KEY not found in environment variables. Please check your .env file.")
+    raise ValueError(
+        "UMLS_API_KEY not found in environment variables. Please check your .env file."
+    )
+
 
 def process_ehr_data(
     model_path="/n/data1/hsph/biostat/celehs/lab/hongyi/ehrllm/THUMedInfo/GENIE_en_8b",
@@ -36,6 +39,15 @@ def process_ehr_data(
 
     Returns:
         list: List of processed responses
+
+    Example:
+        >>> ehr_responses = process_ehr_data(
+        ...     model_path="path/to/model",
+        ...     data_path="data/ehr_records.csv",
+        ...     n_samples=5
+        ... )
+        >>> print(ehr_responses[0])
+        [{'phrase': 'abdominal pain', 'semantic_type': 'Sign, Symptom, or Finding', ...}]
     """
     PROMPT_TEMPLATE = "Human:\n{query}\n\n Assistant:"
 
@@ -55,11 +67,12 @@ def process_ehr_data(
     responses = []
     for output in outputs:
         response = output.outputs[0].text
-        last_closed_brace_index = response.rfind('}')
-        complete_json_string = response[:last_closed_brace_index + 1] + ']'
+        last_closed_brace_index = response.rfind("}")
+        complete_json_string = response[: last_closed_brace_index + 1] + "]"
         responses.append(json.loads(complete_json_string))
 
     return responses
+
 
 def post_process_entities(entities, cui_dictionary_file, cui_column="cui", term_column="term"):
     """
@@ -73,73 +86,100 @@ def post_process_entities(entities, cui_dictionary_file, cui_column="cui", term_
 
     Returns:
         list: List of processed entity dictionaries with standardized formatting
+
+    Example:
+        >>> entities = [{
+        ...     'phrase': 'abdominal pain',
+        ...     'semantic_type': 'Sign, Symptom, or Finding',
+        ...     'assertion_status': 'present'
+        ... }]
+        >>> processed = post_process_entities(
+        ...     entities,
+        ...     cui_dictionary_file='data/cui_dictionary.csv'
+        ... )
+        >>> print(processed[0])
+        {'phrase': 'abdominal pain', 'semantic_type': 'Sign, Symptom, or Finding', 
+         'assertion_status': 'present', 'cui': 'C0000737'}
     """
     start_time = time.time()
-    
+
     # Read only necessary columns from CSV
     cui_df = pd.read_csv(cui_dictionary_file, usecols=[cui_column, term_column])
-    
+
     # Create term_to_cui mapping once
     term_to_cui = dict(zip(cui_df[term_column].str.lower(), cui_df[cui_column]))
-    
+
     # Pre-extract all phrases for faster lookup
-    entity_phrases = {entity['phrase'].lower() for entity in entities}
-    
+    entity_phrases = {entity["phrase"].lower() for entity in entities}
+
     # Create a filtered mapping for only relevant terms
     relevant_terms = term_to_cui.keys() & entity_phrases
     filtered_term_to_cui = {term: term_to_cui[term] for term in relevant_terms}
-    
+
     # Process entities using list comprehension
     processed_entities = [
-        {**entity, 'cui': filtered_term_to_cui[entity['phrase'].lower()]}
+        {**entity, "cui": filtered_term_to_cui[entity["phrase"].lower()]}
         for entity in entities
-        if entity['phrase'].lower() in filtered_term_to_cui
+        if entity["phrase"].lower() in filtered_term_to_cui
     ]
-    
+
     end_time = time.time()
-    print(f"Post-processing took {end_time - start_time:.2f} seconds for {len(entities)} entities")
+    print(
+        f"Post-processing took {end_time - start_time:.2f} seconds for {len(entities)} entities"
+    )
     print(f"Matched {len(processed_entities)} entities with CUIs")
-    
+
     return processed_entities
 
 
 def get_cui_from_umls(term):
     """
     Query UMLS API to get CUI for a given term.
-    
+
     Args:
         term (str): Medical term to search for in UMLS
-        
+
     Returns:
         str: CUI code if found, None otherwise
+
+    Example:
+        >>> cui = get_cui_from_umls('diabetes mellitus')
+        >>> print(cui)
+        'C0011849'
+        
+        >>> cui = get_cui_from_umls('nonexistent term')
+        >>> print(cui)
+        None
     """
     # UMLS API endpoint
-    base_url = 'https://uts-ws.nlm.nih.gov/rest'
-    version = 'current'
-    search_url = f'{base_url}/search/{version}'
-    
+    base_url = "https://uts-ws.nlm.nih.gov/rest"
+    version = "current"
+    search_url = f"{base_url}/search/{version}"
+
     # Parameters for the search
     params = {
-        'string': term,
-        'apiKey': api_key,
-        'pageSize': 1  # We only need the first/best match
+        "string": term,
+        "apiKey": api_key,
+        "pageSize": 1,  # We only need the first/best match
     }
-    
+
     try:
         response = requests.get(search_url, params=params)
         response.raise_for_status()
-        
+
         results = response.json()
-        
+
         # Check if we got any results
-        if (results.get('result') and 
-            results['result'].get('results') and 
-            len(results['result']['results']) > 0):
-            
-            return results['result']['results'][0]['ui']
-            
+        if (
+            results.get("result")
+            and results["result"].get("results")
+            and len(results["result"]["results"]) > 0
+        ):
+
+            return results["result"]["results"][0]["ui"]
+
         return None
-        
+
     except requests.exceptions.RequestException as e:
         print(f"Error querying UMLS API for term '{term}': {e}")
         return None
@@ -147,9 +187,10 @@ def get_cui_from_umls(term):
         print(f"Error parsing UMLS API response for term '{term}': {e}")
         return None
 
+
 if __name__ == "__main__":
     # Example usage of process_ehr_data() and get_cui_from_umls()
-    
+
     # Example 1: Get CUI code for a medical term
     # example_term = "abdominal pain"
     # cui_code = get_cui_from_umls(example_term)
@@ -159,7 +200,7 @@ if __name__ == "__main__":
 
     # Example 2: Process some sample EHR data
     # sample_ehr_text = """
-    # Patient presents with fever and cough for 3 days. 
+    # Patient presents with fever and cough for 3 days.
     # Medical History: Type 2 Diabetes, Hypertension
     # Medications: Metformin 500mg BID, Lisinopril 10mg daily
     # """
@@ -173,20 +214,80 @@ if __name__ == "__main__":
     # Example 3: Post processing function
 
     entities = [
-        {'phrase': 'allergies', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'title', 'body_location': 'null', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
-        {'phrase': 'sulfur', 'semantic_type': 'Chemical or Drug', 'assertion_status': 'present', 'body_location': 'not applicable', 'modifier': 'not applicable', 'value': 'null', 'unit': 'units: null', 'purpose': 'null'}, 
-        {'phrase': 'norvasc', 'semantic_type': 'Chemical or Drug', 'assertion_status': 'present', 'body_location': 'not applicable', 'modifier': 'not applicable', 'value': 'null', 'unit': 'units: null', 'purpose': 'null'}, 
-        {'phrase': 'abdominal pain', 'semantic_type': 'Sign, Symptom, or Finding', 'assertion_status': 'present', 'body_location': 'Abdominal', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
-        {'phrase': 'surgical or invasive procedure', 'semantic_type': 'Therapeutic or Preventive Procedure', 'assertion_status': 'title', 'body_location': 'null', 'modifier': 'not applicable', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'null'},
-        {'phrase': 'renovascular hypertension', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'present', 'body_location': 'renal', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}, 
-        {'phrase': 'non-st elevation myocardial infarction', 'semantic_type': 'Disease, Syndrome or Pathologic Function', 'assertion_status': 'present', 'body_location': 'null', 'modifier': 'null', 'value': 'not applicable', 'unit': 'not applicable', 'purpose': 'not applicable'}
+        {
+            "phrase": "allergies",
+            "semantic_type": "Disease, Syndrome or Pathologic Function",
+            "assertion_status": "title",
+            "body_location": "null",
+            "modifier": "null",
+            "value": "not applicable",
+            "unit": "not applicable",
+            "purpose": "not applicable",
+        },
+        {
+            "phrase": "sulfur",
+            "semantic_type": "Chemical or Drug",
+            "assertion_status": "present",
+            "body_location": "not applicable",
+            "modifier": "not applicable",
+            "value": "null",
+            "unit": "units: null",
+            "purpose": "null",
+        },
+        {
+            "phrase": "norvasc",
+            "semantic_type": "Chemical or Drug",
+            "assertion_status": "present",
+            "body_location": "not applicable",
+            "modifier": "not applicable",
+            "value": "null",
+            "unit": "units: null",
+            "purpose": "null",
+        },
+        {
+            "phrase": "abdominal pain",
+            "semantic_type": "Sign, Symptom, or Finding",
+            "assertion_status": "present",
+            "body_location": "Abdominal",
+            "modifier": "null",
+            "value": "not applicable",
+            "unit": "not applicable",
+            "purpose": "not applicable",
+        },
+        {
+            "phrase": "surgical or invasive procedure",
+            "semantic_type": "Therapeutic or Preventive Procedure",
+            "assertion_status": "title",
+            "body_location": "null",
+            "modifier": "not applicable",
+            "value": "not applicable",
+            "unit": "not applicable",
+            "purpose": "null",
+        },
+        {
+            "phrase": "renovascular hypertension",
+            "semantic_type": "Disease, Syndrome or Pathologic Function",
+            "assertion_status": "present",
+            "body_location": "renal",
+            "modifier": "null",
+            "value": "not applicable",
+            "unit": "not applicable",
+            "purpose": "not applicable",
+        },
+        {
+            "phrase": "non-st elevation myocardial infarction",
+            "semantic_type": "Disease, Syndrome or Pathologic Function",
+            "assertion_status": "present",
+            "body_location": "null",
+            "modifier": "null",
+            "value": "not applicable",
+            "unit": "not applicable",
+            "purpose": "not applicable",
+        },
     ]
 
-    post_process_entities(entities * 143000, cui_dictionary_file="data/cui_dictionary.csv")
-    
-
-    
+    post_process_entities(
+        entities * 143000, cui_dictionary_file="data/cui_dictionary.csv"
+    )
 
     # res = json.loads(output[0])
-
-

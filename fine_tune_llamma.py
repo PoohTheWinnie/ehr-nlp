@@ -1,6 +1,7 @@
 import os
 
 import torch
+from datasets import load_dataset
 from peft import LoraConfig, PeftModel
 from transformers import (
     AutoModelForCausalLM,
@@ -13,13 +14,13 @@ from transformers import (
 )
 from trl import SFTTrainer
 
-from datasets import load_dataset
-
 print(f"CUDA available: {torch.cuda.is_available()}")
 if torch.cuda.is_available():
     print(f"Current device: {torch.cuda.current_device()}")
     print(f"Device name: {torch.cuda.get_device_name()}")
-    print(f"Device memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+    print(
+        f"Device memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB"
+    )
 
 
 model_path = "/n/data1/hsph/biostat/celehs/LLM_MODELS/Models"
