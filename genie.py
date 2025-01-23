@@ -1,22 +1,8 @@
 import json
-import os
 import time
 
 import pandas as pd
-import requests
-from dotenv import load_dotenv
 from vllm import LLM, SamplingParams
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Get API key from environment variables
-api_key = os.getenv("UMLS_API_KEY")
-if not api_key:
-    raise ValueError(
-        "UMLS_API_KEY not found in environment variables. Please check your .env file."
-    )
-
 
 def process_ehr_data(
     model_path="/n/data1/hsph/biostat/celehs/lab/hongyi/ehrllm/THUMedInfo/GENIE_en_8b",
@@ -132,60 +118,7 @@ def post_process_entities(entities, cui_dictionary_file, cui_column="cui", term_
     return processed_entities
 
 
-def get_cui_from_umls(term):
-    """
-    Query UMLS API to get CUI for a given term.
 
-    Args:
-        term (str): Medical term to search for in UMLS
-
-    Returns:
-        str: CUI code if found, None otherwise
-
-    Example:
-        >>> cui = get_cui_from_umls('diabetes mellitus')
-        >>> print(cui)
-        'C0011849'
-        
-        >>> cui = get_cui_from_umls('nonexistent term')
-        >>> print(cui)
-        None
-    """
-    # UMLS API endpoint
-    base_url = "https://uts-ws.nlm.nih.gov/rest"
-    version = "current"
-    search_url = f"{base_url}/search/{version}"
-
-    # Parameters for the search
-    params = {
-        "string": term,
-        "apiKey": api_key,
-        "pageSize": 1,  # We only need the first/best match
-    }
-
-    try:
-        response = requests.get(search_url, params=params)
-        response.raise_for_status()
-
-        results = response.json()
-
-        # Check if we got any results
-        if (
-            results.get("result")
-            and results["result"].get("results")
-            and len(results["result"]["results"]) > 0
-        ):
-
-            return results["result"]["results"][0]["ui"]
-
-        return None
-
-    except requests.exceptions.RequestException as e:
-        print(f"Error querying UMLS API for term '{term}': {e}")
-        return None
-    except json.JSONDecodeError as e:
-        print(f"Error parsing UMLS API response for term '{term}': {e}")
-        return None
 
 
 if __name__ == "__main__":

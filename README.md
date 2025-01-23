@@ -56,6 +56,12 @@ make install CUDA_VERSION=112
 3. Use `module load cuda/<version>` to load specific CUDA version
 
 
+## AG Project Specifications
+
+NILE and Genie output union
+
+Full NLP Pipeline Documentation [] (Link to powerpoint)
+
 ## O2 Guide
 
 Model Paths:
