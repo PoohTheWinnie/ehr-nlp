@@ -57,10 +57,34 @@ make install CUDA_VERSION=112
 
 
 ## AG Project Specifications
+### Key Concepts for Extraction
 
-NILE and Genie output union
+#### 1. Driver Mutations
+- JAK2
+- MPL
+- CALR
+- Triple negative
 
-Full NLP Pipeline Documentation [] (Link to powerpoint)
+#### 2. Essential Thrombocythemia (ET) Symptoms
+*Note: List subject to refinement with clinical experts*
+- Arthralgia
+- Fatigue
+- Pruritis
+- Satiety
+- Night sweats
+- Numbness
+
+#### 3. Hydroxyurea-Related Adverse Events
+*Note: List subject to refinement with clinical experts*
+- Sores/ulcers
+- Skin lesions
+- Stomach pain
+- Constipation
+- Diarrhea
+- Nausea
+- Vomiting
+
+[Full NLP Pipeline Documentation] (https://docs.google.com/presentation/d/1Ze8OEfBJ9iL5HmMw6IbXcW3KJXCY2tu2OcXdY8Ua_Oo/edit?usp=sharing)
 
 ## O2 Guide
 
@@ -82,11 +106,11 @@ GPU Instances Info:
 Once you have access, follow these steps to download the LLaMA 2 model:
 
 1. **Request Access**:
-   - Visit Meta’s official [LLaMA 2 page](https://ai.meta.com/llama/).
-   - Request access and agree to Meta’s terms of use for the model.
+   - Visit Meta's official [LLaMA 2 page](https://ai.meta.com/llama/).
+   - Request access and agree to Meta's terms of use for the model.
 
 2. **Set Up Hugging Face Authentication**:
-   - Go to [Hugging Face](https://huggingface.co/) and create an account if you don’t have one.
+   - Go to [Hugging Face](https://huggingface.co/) and create an account if you don't have one.
    - Generate an **access token** by going to [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
 
 3. **Download the Model**:
