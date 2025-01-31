@@ -1,0 +1,57 @@
+filling defect | C0332555
+filling defects | C0332555
+pulmonary embolism | C0034065
+pulmonary embolisms | C0034065
+pulmonary embolus | C0034065
+pulmonary emboli | C0034065
+pe | C0034065
+blood clots in the lung | C0034065
+lung embolism | C0034065
+pulmonary artery embolism | C0034065
+deep vein thrombosis | C0149871
+dvt | C0149871
+deep vein thrombophlebitis | C0149871
+deep vein thrombophlebitides | C0149871
+deep venous thrombosis | C0149871
+thrombosis venous deep | C0149871
+deep vein thromboses | C0149871
+deep-vein thromboses | C0149871
+deep-vein thrombosis | C0149871
+deep venous thromboses | C0149871
+deep-venous thromboses | C0149871
+deep-venous thrombosis | C0149871
+dvts | C0149871
+deep thrombophlebitis | C0149871
+deep thrombophlebitides | C0149871
+pleural effusions | C0032227
+pleural effusion | C0032227
+pleural cavity effusion | C0032227
+pleural effusion disorder | C0032227
+atelectases | C0004144
+atelectasis | C0004144
+pulmonary collapse | C0004144
+collapse of lung | C0004144
+pulmonary atelectases | C0004144
+pulmonary atelectasis | C0004144
+lung collapse | C0004144
+collapsed lung | C0004144
+lobar collapse | C0004144
+collapsed lungs | C0004144
+collapsing lungs | C0004144
+pulmonary collapse with atelectasis | C0004144
+pericardial effusion | C0031039
+pericardial effusions | C0031039
+pericardial fluid | C0031039
+nodule | C0028259
+nodules | C0028259
+mediastinal lymphadenopathy | C0520743
+mediastinal lymphadenopathies | C0520743
+axillary lymph node enlargement | C0578735
+axillary lymphadenopathy | C0578735
+axillary lymphadenopathies | C0578735
+axillary lymph nodes enlarged | C0578735
+axillary adenopathy | C0578735
+axillary adenopathies | C0578735
+enlarged axillary lymph node | C0578735
+hilar lymphadenopathy | C0456973
+hilar lymphadenopathies | C0456973

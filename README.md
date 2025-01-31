@@ -56,6 +56,40 @@ make install CUDA_VERSION=112
 3. Use `module load cuda/<version>` to load specific CUDA version
 
 
+## AG Project Specifications
+
+[Full NLP Pipeline Documentation](https://docs.google.com/presentation/d/1Ze8OEfBJ9iL5HmMw6IbXcW3KJXCY2tu2OcXdY8Ua_Oo/edit?usp=sharing)
+
+### Target Extractions
+
+#### Driver Mutations
+The following driver mutations and their associated dates should be extracted from physician notes:
+- JAK2
+- MPL
+- CALR
+- Triple negative status
+
+#### Essential Thrombocythemia (ET) Symptoms
+The following symptoms and their associated dates should be extracted from physician notes (preliminary list):
+- Arthralgia
+- Fatigue
+- Pruritis
+- Satiety
+- Night sweats
+- Numbness
+
+#### Hydroxyurea-Related Adverse Events
+The following adverse events and their associated dates should be extracted from physician notes (preliminary list):
+- Sores/ulcers
+- Skin lesions
+- Stomach pain
+- Constipation
+- Diarrhea
+- Nausea
+- Vomiting
+
+*Note: The lists of symptoms and adverse events are currently being refined with clinical experts and may be subject to change.*
+
 ## O2 Guide
 
 Model Paths:
@@ -70,6 +104,9 @@ Model Paths:
 
 GPU Instances Info:
 - [O2 GPU Resources](https://harvardmed.atlassian.net/wiki/spaces/O2/pages/1629290761/Using+O2+GPU+resources)
+
+MIMIC Notes Path:
+- /n/data1/hsph/biostat/celehs/lab/va67/MIMIC/mimic-iv-note/2.2/note
 
 ## Genie Notes
 
@@ -86,11 +123,11 @@ GPU Instances Info:
 Once you have access, follow these steps to download the LLaMA 2 model:
 
 1. **Request Access**:
-   - Visit Meta’s official [LLaMA 2 page](https://ai.meta.com/llama/).
-   - Request access and agree to Meta’s terms of use for the model.
+   - Visit Meta's official [LLaMA 2 page](https://ai.meta.com/llama/).
+   - Request access and agree to Meta's terms of use for the model.
 
 2. **Set Up Hugging Face Authentication**:
-   - Go to [Hugging Face](https://huggingface.co/) and create an account if you don’t have one.
+   - Go to [Hugging Face](https://huggingface.co/) and create an account if you don't have one.
    - Generate an **access token** by going to [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
 
 3. **Download the Model**:

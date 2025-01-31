@@ -1,0 +1,7 @@
+Text,Codes,SemanticRole,Certainty,FamilyHistory
+filling defects,C0332555,OBSERVATION,NO,false
+pulmonary embolism,C0034065,OBSERVATION,NO,false
+filling defects,C0332555,OBSERVATION,NO,false
+pulmonary embolism,C0034065,OBSERVATION,YES,false
+filling defects,C0332555,OBSERVATION,NO,false
+pulmonary embolism,C0034065,OBSERVATION,UNCLEAR,false
