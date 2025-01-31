@@ -71,6 +71,16 @@ Model Paths:
 GPU Instances Info:
 - [O2 GPU Resources](https://harvardmed.atlassian.net/wiki/spaces/O2/pages/1629290761/Using+O2+GPU+resources)
 
+## Genie Notes
+
+### Performance Benchmarks
+
+| Input Size | GPU Type | Processing Time |
+|------------|----------|-----------------|
+| 100 notes | Tesla V100S-PCIE-32GB | 262.58 seconds |
+| 100 notes | NVIDIA A100 80GB PCIe | 103.93 seconds |
+
+
 ## Downloading LLaMA 2 Model Weights
 
 Once you have access, follow these steps to download the LLaMA 2 model:

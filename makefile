@@ -10,7 +10,7 @@ SRC_DIR = .
 # Default values for GPU parameters
 GPU ?= a100
 MEM ?= 32
-PARTITION ?= gpu
+PARTITION ?= gpu # gpu,gpu_quad,gpu_requeue
 TIME ?= 1:15:00
 JOBID ?= 1092830
 
@@ -39,6 +39,14 @@ start-gpu:
 .PHONY: cancel-gpu
 cancel-gpu:
 	scancel $(JOBID)
+
+# Add this new target
+.PHONY: check-nodes
+check-nodes:
+	@echo "Checking nodes in gpu_quad partition:"
+	sinfo -p gpu_quad -o "%n %G %T %C"
+	@echo "\nChecking all GPU partitions and their nodes:"
+	sinfo -p gpu,gpu_quad,gpu_requeue -o "%P %n %G %T %C"
 
 # Setup and activate conda environment
 .PHONY: setup
