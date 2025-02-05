@@ -3,13 +3,25 @@ import time
 
 import pandas as pd
 from vllm import LLM, SamplingParams
+from helper import timer_decorator
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Get API key from environment variables
+api_key = os.getenv("UMLS_API_KEY")
+# if not api_key:
+#     raise ValueError(
+#         "UMLS_API_KEY not found in environment variables. Please check your .env file."
+#     )
+
+@timer_decorator
 def process_ehr_data(
     model_path="/n/data1/hsph/biostat/celehs/lab/hongyi/ehrllm/THUMedInfo/GENIE_en_8b",
-    data_path="data/mimic_smoking.csv",
-    n_samples=2,
+    data_path="data/testing.csv",
+    n_samples=100,
     temperature=0.7,
-    max_new_token=512,
+    max_new_token=2048,
     tensor_parallel_size=1,
 ):
     """
@@ -45,6 +57,8 @@ def process_ehr_data(
     first_n_texts = df["text"].head(n_samples)
     EHR = first_n_texts.tolist()
 
+    print(EHR)
+
     # Generate prompts and get model outputs
     texts = [PROMPT_TEMPLATE.format(query=k) for k in EHR]
     outputs = model.generate(texts, sampling_params)
@@ -59,7 +73,7 @@ def process_ehr_data(
 
     return responses
 
-
+@timer_decorator
 def post_process_entities(entities, cui_dictionary_file, cui_column="cui", term_column="term"):
     """
     Post-process extracted entities from the model output using a CSV dictionary file.
@@ -87,8 +101,6 @@ def post_process_entities(entities, cui_dictionary_file, cui_column="cui", term_
         {'phrase': 'abdominal pain', 'semantic_type': 'Sign, Symptom, or Finding', 
          'assertion_status': 'present', 'cui': 'C0000737'}
     """
-    start_time = time.time()
-
     # Read only necessary columns from CSV
     cui_df = pd.read_csv(cui_dictionary_file, usecols=[cui_column, term_column])
 
@@ -108,12 +120,7 @@ def post_process_entities(entities, cui_dictionary_file, cui_column="cui", term_
         for entity in entities
         if entity["phrase"].lower() in filtered_term_to_cui
     ]
-
-    end_time = time.time()
-    print(
-        f"Post-processing took {end_time - start_time:.2f} seconds for {len(entities)} entities"
-    )
-    print(f"Matched {len(processed_entities)} entities with CUIs")
+    print(f"Matched {len(entities)} entities with {len(processed_entities)} CUIs")
 
     return processed_entities
 
@@ -122,105 +129,9 @@ def post_process_entities(entities, cui_dictionary_file, cui_column="cui", term_
 
 
 if __name__ == "__main__":
-    # Example usage of process_ehr_data() and get_cui_from_umls()
+    entities = process_ehr_data(n_samples=1)
+    print(entities[0])
 
-    # Example 1: Get CUI code for a medical term
-    # example_term = "abdominal pain"
-    # cui_code = get_cui_from_umls(example_term)
-    # print(f"\nExample 1: Getting CUI code")
-    # print(f"Term: {example_term}")
-    # print(f"CUI Code: {cui_code}")
-
-    # Example 2: Process some sample EHR data
-    # sample_ehr_text = """
-    # Patient presents with fever and cough for 3 days.
-    # Medical History: Type 2 Diabetes, Hypertension
-    # Medications: Metformin 500mg BID, Lisinopril 10mg daily
-    # """
-    # print("\nExample 2: Processing EHR text")
-    # print("Input text:")
-    # print(sample_ehr_text)
-    # print("\nProcessed entities:")
-    # responses = process_ehr_data()
-    # print(responses)
-
-    # Example 3: Post processing function
-
-    entities = [
-        {
-            "phrase": "allergies",
-            "semantic_type": "Disease, Syndrome or Pathologic Function",
-            "assertion_status": "title",
-            "body_location": "null",
-            "modifier": "null",
-            "value": "not applicable",
-            "unit": "not applicable",
-            "purpose": "not applicable",
-        },
-        {
-            "phrase": "sulfur",
-            "semantic_type": "Chemical or Drug",
-            "assertion_status": "present",
-            "body_location": "not applicable",
-            "modifier": "not applicable",
-            "value": "null",
-            "unit": "units: null",
-            "purpose": "null",
-        },
-        {
-            "phrase": "norvasc",
-            "semantic_type": "Chemical or Drug",
-            "assertion_status": "present",
-            "body_location": "not applicable",
-            "modifier": "not applicable",
-            "value": "null",
-            "unit": "units: null",
-            "purpose": "null",
-        },
-        {
-            "phrase": "abdominal pain",
-            "semantic_type": "Sign, Symptom, or Finding",
-            "assertion_status": "present",
-            "body_location": "Abdominal",
-            "modifier": "null",
-            "value": "not applicable",
-            "unit": "not applicable",
-            "purpose": "not applicable",
-        },
-        {
-            "phrase": "surgical or invasive procedure",
-            "semantic_type": "Therapeutic or Preventive Procedure",
-            "assertion_status": "title",
-            "body_location": "null",
-            "modifier": "not applicable",
-            "value": "not applicable",
-            "unit": "not applicable",
-            "purpose": "null",
-        },
-        {
-            "phrase": "renovascular hypertension",
-            "semantic_type": "Disease, Syndrome or Pathologic Function",
-            "assertion_status": "present",
-            "body_location": "renal",
-            "modifier": "null",
-            "value": "not applicable",
-            "unit": "not applicable",
-            "purpose": "not applicable",
-        },
-        {
-            "phrase": "non-st elevation myocardial infarction",
-            "semantic_type": "Disease, Syndrome or Pathologic Function",
-            "assertion_status": "present",
-            "body_location": "null",
-            "modifier": "null",
-            "value": "not applicable",
-            "unit": "not applicable",
-            "purpose": "not applicable",
-        },
-    ]
-
-    post_process_entities(
-        entities * 143000, cui_dictionary_file="data/cui_dictionary.csv"
-    )
-
-    # res = json.loads(output[0])
+    # post_process_entities(
+    #     entities, cui_dictionary_file="data/cui_dictionary.csv"
+    # )

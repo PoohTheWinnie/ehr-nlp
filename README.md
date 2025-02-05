@@ -67,6 +67,19 @@ make install CUDA_VERSION=112
 
 #### 2. Essential Thrombocythemia (ET) Symptoms
 *Note: List subject to refinement with clinical experts*
+[Full NLP Pipeline Documentation](https://docs.google.com/presentation/d/1Ze8OEfBJ9iL5HmMw6IbXcW3KJXCY2tu2OcXdY8Ua_Oo/edit?usp=sharing)
+
+### Target Extractions
+
+#### Driver Mutations
+The following driver mutations and their associated dates should be extracted from physician notes:
+- JAK2
+- MPL
+- CALR
+- Triple negative status
+
+#### Essential Thrombocythemia (ET) Symptoms
+The following symptoms and their associated dates should be extracted from physician notes (preliminary list):
 - Arthralgia
 - Fatigue
 - Pruritis
@@ -74,8 +87,13 @@ make install CUDA_VERSION=112
 - Night sweats
 - Numbness
 
+<<<<<<< HEAD
 #### 3. Hydroxyurea-Related Adverse Events
 *Note: List subject to refinement with clinical experts*
+=======
+#### Hydroxyurea-Related Adverse Events
+The following adverse events and their associated dates should be extracted from physician notes (preliminary list):
+>>>>>>> dd38bea25017a6abf1390b3f436d5ead27ed79b9
 - Sores/ulcers
 - Skin lesions
 - Stomach pain
@@ -84,7 +102,11 @@ make install CUDA_VERSION=112
 - Nausea
 - Vomiting
 
+<<<<<<< HEAD
 [Full NLP Pipeline Documentation] (https://docs.google.com/presentation/d/1Ze8OEfBJ9iL5HmMw6IbXcW3KJXCY2tu2OcXdY8Ua_Oo/edit?usp=sharing)
+=======
+*Note: The lists of symptoms and adverse events are currently being refined with clinical experts and may be subject to change.*
+>>>>>>> dd38bea25017a6abf1390b3f436d5ead27ed79b9
 
 ## O2 Guide
 
@@ -100,6 +122,19 @@ Model Paths:
 
 GPU Instances Info:
 - [O2 GPU Resources](https://harvardmed.atlassian.net/wiki/spaces/O2/pages/1629290761/Using+O2+GPU+resources)
+
+MIMIC Notes Path:
+- /n/data1/hsph/biostat/celehs/lab/va67/MIMIC/mimic-iv-note/2.2/note
+
+## Genie Notes
+
+### Performance Benchmarks
+
+| Input Size | GPU Type | Processing Time |
+|------------|----------|-----------------|
+| 100 notes | Tesla V100S-PCIE-32GB | 262.58 seconds |
+| 100 notes | NVIDIA A100 80GB PCIe | 103.93 seconds |
+
 
 ## Downloading LLaMA 2 Model Weights
 
